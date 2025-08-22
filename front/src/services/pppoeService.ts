@@ -36,5 +36,10 @@ export const pppoeService = {
   async deleteClient(id: number): Promise<{ message: string }> {
     const response = await axios.delete(`${API_BASE_URL}/api/pppoe/clients/${id}`);
     return response.data;
+  },
+
+  async getActiveSessions() {
+    const response = await axios.get(`${API_BASE_URL}/api/pppoe/sessions/active`);
+    return response.data;
   }
 };

@@ -17,7 +17,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+import { pppoeService } from '../../services/pppoeService';
 
 interface ActiveSession {
   id: string;
@@ -56,11 +57,12 @@ export const SessionManagement: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/sessions/active`);
-      setSessions(response.data);
+      const data = await pppoeService.getActiveSessions();
+      setSessions(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar sesiones');
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Error al cargar sesiones');
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,7 @@ export const SessionManagement: React.FC = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/routers`);
       setRouters(response.data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading routers:', err);
     }
   };
@@ -92,8 +94,9 @@ export const SessionManagement: React.FC = () => {
       }
       
       await fetchSessions(); // Refresh the list
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al desconectar sesión');
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Error al desconectar sesión');
     } finally {
       setDisconnecting(null);
     }
