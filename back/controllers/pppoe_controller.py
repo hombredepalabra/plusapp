@@ -500,3 +500,30 @@ class PPPoEController:
             'logs': [],
             'message': 'No hay logs disponibles'
         }), 200
+
+    @staticmethod
+    def get_active_sessions():
+        """GET /api/pppoe/sessions/active - Sesiones PPPoE activas"""
+        routers = Router.query.filter_by(is_active=True).all()
+        sessions = []
+        for router in routers:
+            data, error = MikroTikService.get_pppoe_active(router)
+            if error or not data:
+                continue
+            for s in data:
+                sessions.append({
+                    'id': s.get('.id') or s.get('id'),
+                    'clientName': s.get('name', ''),
+                    'clientId': None,
+                    'address': s.get('address', ''),
+                    'uptime': s.get('uptime', ''),
+                    'rxBytes': int(s.get('bytes-in', 0)),
+                    'txBytes': int(s.get('bytes-out', 0)),
+                    'rxPackets': int(s.get('packets-in', 0)),
+                    'txPackets': int(s.get('packets-out', 0)),
+                    'routerId': str(router.id),
+                    'routerName': router.name,
+                    'callingStationId': s.get('caller-id'),
+                    'calledStationId': s.get('called-id')
+                })
+        return jsonify(sessions), 200
