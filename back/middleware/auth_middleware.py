@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import jsonify
+from flask import jsonify, request
 from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
 from models import User
 
@@ -87,20 +87,22 @@ def require_auth(f):
     """Decorador que requiere autenticación JWT válida"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        if request.method == 'OPTIONS':
+            return jsonify({'status': 'ok'}), 200
         try:
             verify_jwt_in_request()
             user_id = get_jwt_identity()
             user = User.query.get(int(user_id))
-            
+
             if not user:
                 return jsonify({
                     'success': False,
                     'message': 'Usuario no encontrado',
                     'code': 'USER_NOT_FOUND'
                 }), 404
-            
+
             return f(*args, **kwargs)
-        except Exception as e:
+        except Exception:
             return jsonify({
                 'success': False,
                 'message': 'Token inválido o expirado',

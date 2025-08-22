@@ -105,6 +105,13 @@ def get_client_logs(client_id):
     """GET /api/pppoe/clients/{id}/logs - Logs de conexión del cliente"""
     return PPPoEController.get_client_logs(client_id)
 
+@pppoe_bp.route('/sessions/active', methods=['GET'])
+@require_auth
+@handle_errors
+def get_active_sessions():
+    """GET /api/pppoe/sessions/active - Sesiones PPPoE activas"""
+    return PPPoEController.get_active_sessions()
+
 @pppoe_bp.route('/test', methods=['GET'])
 def test_endpoint():
     """Endpoint de prueba sin autenticación"""
