@@ -6,6 +6,7 @@ from utils.decorators import handle_errors
 router_bp = Blueprint('routers', __name__, url_prefix='/api/routers')
 
 @router_bp.route('/', methods=['GET'])
+@router_bp.route('', methods=['GET'])
 @require_auth
 @handle_errors
 def list_routers():

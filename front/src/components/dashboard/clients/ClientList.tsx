@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
 import { Alert, AlertDescription } from '../../ui/alert';
 import { 
-  Plus, 
-  Search, 
-  Wifi, 
-  WifiOff, 
+  Plus,
+  Search,
+  Wifi,
+  WifiOff,
   User,
   AlertTriangle,
   Settings,
@@ -25,8 +25,15 @@ import {
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../../ui/dropdown-menu';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { PPPoEClient, PPPoEClientFilters, Router } from '../../../types/router';
+import type { PPPoEClient, PPPoEClientFilters, Router } from '../../../types/router';
 import axios from 'axios';
+
+interface ClientsResponse {
+  clients: PPPoEClient[];
+  total?: number;
+  pages?: number;
+  currentPage?: number;
+}
 
 export const ClientList: React.FC = () => {
   const { canManageClients, canControlClients } = usePermissions();
@@ -52,8 +59,10 @@ export const ClientList: React.FC = () => {
       if (filters.profile) params.append('profile', filters.profile);
       if (filters.isActive !== undefined) params.append('is_active', filters.isActive.toString());
 
-      const response = await axios.get(`/api/pppoe/clients?${params.toString()}`);
-      setClients(response.data);
+      const response = await axios.get<ClientsResponse>(
+        `/api/pppoe/clients?${params.toString()}`
+      );
+      setClients(response.data.clients || []);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Error al cargar clientes');
@@ -267,9 +276,10 @@ export const ClientList: React.FC = () => {
 
       {/* Client Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {clients.map((client) => (
-          <Card key={client.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        {Array.isArray(clients) ? (
+            clients.map((client) => (
+              <Card key={client.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="flex items-center space-x-2">
                 {getStatusIcon(client.status)}
                 <CardTitle className="text-lg">{client.name}</CardTitle>
@@ -398,7 +408,13 @@ export const ClientList: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
+          ))
+        ) : (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>Datos de clientes inválidos</AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {/* Empty State */}
