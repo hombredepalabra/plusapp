@@ -9,7 +9,6 @@ import {
   Shield,
   Search,
   Plus,
-  Trash2,
   Ban,
   CheckCircle,
   AlertTriangle,
@@ -19,6 +18,7 @@ import {
 } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import axios from 'axios';
+import { firewallService } from '../../../services/firewallService';
 
 interface FirewallRule {
   id: string;
@@ -60,11 +60,14 @@ export const FirewallManagement: React.FC = () => {
 
   const fetchFirewallRules = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/firewall/rules`);
-      setRules(response.data);
+      const data = await firewallService.getRules();
+      setRules(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar reglas de firewall');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message
+        : undefined;
+      setError(message || 'Error al cargar reglas de firewall');
     } finally {
       setLoading(false);
     }
@@ -72,9 +75,11 @@ export const FirewallManagement: React.FC = () => {
 
   const fetchRouters = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/routers`);
-      setRouters(response.data.filter((r: any) => r.isActive));
-    } catch (err: any) {
+      const response = await axios.get<Array<{ id: string; name: string; isActive: boolean }>>(
+        `${import.meta.env.VITE_BACKEND_URL}/api/routers`
+      );
+      setRouters(response.data.filter(r => r.isActive));
+    } catch (err: unknown) {
       console.error('Error loading routers:', err);
     }
   };
@@ -109,7 +114,7 @@ export const FirewallManagement: React.FC = () => {
     setError(null);
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/firewall/block-ip`, {
+      await firewallService.blockIP({
         ipAddress: formData.ipAddress.trim(),
         comment: formData.comment.trim() || undefined,
         routerId: formData.routerId
@@ -118,8 +123,11 @@ export const FirewallManagement: React.FC = () => {
       setFormData({ ipAddress: '', comment: '', routerId: '' });
       setShowAddForm(false);
       await fetchFirewallRules();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al bloquear IP');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message
+        : undefined;
+      setError(message || 'Error al bloquear IP');
     } finally {
       setSubmitting(false);
     }
@@ -132,13 +140,14 @@ export const FirewallManagement: React.FC = () => {
 
     setUnblocking(ruleId);
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/firewall/unblock-ip`, {
-        data: { ipAddress }
-      });
+      await firewallService.unblockIP(ipAddress);
       
       await fetchFirewallRules();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al desbloquear IP');
+    } catch (err: unknown) {
+      const message = axios.isAxiosError(err)
+        ? err.response?.data?.message
+        : undefined;
+      setError(message || 'Error al desbloquear IP');
     } finally {
       setUnblocking(null);
     }
