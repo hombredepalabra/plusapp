@@ -49,9 +49,13 @@
 
 export interface User {
   id: string;
+  username: string;
   email: string;
   name: string;
   twoFactorEnabled: boolean;
+  role: string;
+  permissions?: string;
+  isActive: boolean;
   createdAt: string;
   lastLogin?: string;
 }

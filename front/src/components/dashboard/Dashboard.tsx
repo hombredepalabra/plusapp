@@ -5,8 +5,10 @@ import { Header } from './Header';
 import { Overview } from './Overview';
 import { ProfileSettings } from './ProfileSettings';
 import { TwoFactorSettings } from './TwoFactorSettings';
-import { PPPoEClients } from './PPPoEClients';
-import { Users } from './Users';
+import { RouterManagement } from './routers/RouterManagement';
+import { ClientManagement } from './clients/ClientManagement';
+import { SessionManagement } from '../sessions/SessionManagement';
+import { FirewallManagement } from './firewall/FirewallManagement';
 
 export const Dashboard: React.FC = () => {
   return (
@@ -17,8 +19,10 @@ export const Dashboard: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-6">
           <Routes>
             <Route index element={<Overview />} />
-            <Route path="pppoe-clients" element={<PPPoEClients />} />
-            <Route path="users" element={<Users />} />
+            <Route path="routers/*" element={<RouterManagement />} />
+            <Route path="clients/*" element={<ClientManagement />} />
+            <Route path="sessions/*" element={<SessionManagement />} />
+            <Route path="firewall/*" element={<FirewallManagement />} />
             <Route path="profile" element={<ProfileSettings />} />
             <Route path="security" element={<TwoFactorSettings />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

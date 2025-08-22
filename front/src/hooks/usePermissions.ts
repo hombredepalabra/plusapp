@@ -1,0 +1,1 @@
+export { usePermissions, type Permission } from './userPermissions';

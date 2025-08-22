@@ -1,46 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Shield, User, Clock, CheckCircle, AlertCircle, Activity, Wifi, Users } from 'lucide-react';
+import { Shield, User, Clock, CheckCircle, AlertCircle, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { pppoeService } from '../../services/pppoeService';
-import { userService } from '../../services/userService';
 
 export const Overview: React.FC = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    totalClients: 0,
-    activeClients: 0,
-    totalUsers: 0,
-    activeUsers: 0
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const [clientsData, usersData] = await Promise.all([
-          pppoeService.getClients(1, 1).catch(() => ({ clients: [], total: 0 })),
-          userService.getUsers(1, 1).catch(() => ({ users: [], total: 0 }))
-        ]);
-        
-        setStats({
-          totalClients: clientsData.total,
-          activeClients: clientsData.clients.filter(c => c.is_active).length,
-          totalUsers: usersData.total,
-          activeUsers: usersData.users.filter(u => u.is_active).length
-        });
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStats();
-  }, []);
 
   const formatDate = (dateString?: string): string => {
     if (!dateString) return 'Nunca';
@@ -90,30 +57,13 @@ export const Overview: React.FC = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="shadow-glow-hover">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Clientes PPPoE</CardTitle>
-            <Wifi className="h-4 w-4 text-slate-600" />
+            <CardTitle className="text-sm font-medium">Estado de Cuenta</CardTitle>
+            <User className="h-4 w-4 text-slate-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {loading ? '...' : stats.totalClients}
-            </div>
+            <div className="text-2xl font-bold text-green-600">Activa</div>
             <p className="text-xs text-slate-600">
-              {loading ? '...' : stats.activeClients} activos
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-glow-hover">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Sistema</CardTitle>
-            <Users className="h-4 w-4 text-slate-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {loading ? '...' : stats.totalUsers}
-            </div>
-            <p className="text-xs text-slate-600">
-              {loading ? '...' : stats.activeUsers} activos
+              Desde {formatDate(user?.createdAt)}
             </p>
           </CardContent>
         </Card>
@@ -139,6 +89,19 @@ export const Overview: React.FC = () => {
 
         <Card className="shadow-glow-hover">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Último Acceso</CardTitle>
+            <Clock className="h-4 w-4 text-slate-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Hoy</div>
+            <p className="text-xs text-slate-600">
+              {formatDate(user?.lastLogin)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-glow-hover">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Nivel de Seguridad</CardTitle>
             <Activity className="h-4 w-4 text-slate-600" />
           </CardHeader>
@@ -154,65 +117,37 @@ export const Overview: React.FC = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* PPPoE Clients Card */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Profile Card */}
         <Card className="shadow-glow">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Wifi className="h-5 w-5" />
-              <span>Clientes PPPoE</span>
+              <User className="h-5 w-5" />
+              <span>Información del Perfil</span>
             </CardTitle>
             <CardDescription>
-              Gestión de clientes de conexión
+              Detalles de tu cuenta y configuración personal
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-slate-600">Total:</span>
-                <span className="text-sm text-slate-900">{loading ? '...' : stats.totalClients}</span>
+                <span className="text-sm font-medium text-slate-600">Nombre:</span>
+                <span className="text-sm text-slate-900">{user?.name}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-slate-600">Activos:</span>
-                <span className="text-sm text-green-600">{loading ? '...' : stats.activeClients}</span>
+                <span className="text-sm font-medium text-slate-600">Email:</span>
+                <span className="text-sm text-slate-900">{user?.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm font-medium text-slate-600">ID de Usuario:</span>
+                <span className="text-sm text-slate-500 font-mono">{user?.id}</span>
               </div>
             </div>
             <div className="pt-2">
               <Button asChild variant="outline" className="w-full">
-                <Link to="/dashboard/pppoe-clients">
-                  Ver Clientes
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Users Card */}
-        <Card className="shadow-glow">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5" />
-              <span>Usuarios Sistema</span>
-            </CardTitle>
-            <CardDescription>
-              Administración de usuarios
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm font-medium text-slate-600">Total:</span>
-                <span className="text-sm text-slate-900">{loading ? '...' : stats.totalUsers}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm font-medium text-slate-600">Activos:</span>
-                <span className="text-sm text-green-600">{loading ? '...' : stats.activeUsers}</span>
-              </div>
-            </div>
-            <div className="pt-2">
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/dashboard/users">
-                  Ver Usuarios
+                <Link to="/dashboard/profile">
+                  Editar Perfil
                 </Link>
               </Button>
             </div>
@@ -233,7 +168,7 @@ export const Overview: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Autenticación 2FA</span>
+                <span className="text-sm font-medium">Autenticación de Dos Factores</span>
                 <Badge variant={user?.twoFactorEnabled ? "default" : "secondary"}>
                   {user?.twoFactorEnabled ? 'Activa' : 'Inactiva'}
                 </Badge>
