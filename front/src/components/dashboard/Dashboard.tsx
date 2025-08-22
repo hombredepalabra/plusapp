@@ -1,0 +1,30 @@
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
+import { Header } from './Header';
+import { Overview } from './Overview';
+import { ProfileSettings } from './ProfileSettings';
+import { TwoFactorSettings } from './TwoFactorSettings';
+import { PPPoEClients } from './PPPoEClients';
+import { Users } from './Users';
+
+export const Dashboard: React.FC = () => {
+  return (
+    <div className="flex h-screen bg-slate-50">
+      <Sidebar />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">
+          <Routes>
+            <Route index element={<Overview />} />
+            <Route path="pppoe-clients" element={<PPPoEClients />} />
+            <Route path="users" element={<Users />} />
+            <Route path="profile" element={<ProfileSettings />} />
+            <Route path="security" element={<TwoFactorSettings />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+};
