@@ -67,6 +67,9 @@ def create_app():
     from routes.router_routes import router_bp
     app.register_blueprint(router_bp)
 
+    from routes.firewall_routes import firewall_bp
+    app.register_blueprint(firewall_bp)
+
     from routes.sync_routes import sync_bp
     app.register_blueprint(sync_bp)
 

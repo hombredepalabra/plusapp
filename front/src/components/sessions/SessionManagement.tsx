@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription } from '../ui/alert';
+import { Label } from '../ui/label';
 import { 
   Activity,
   Search,
@@ -17,7 +18,10 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { usePermissions } from '../../hooks/usePermissions';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+import { toast } from 'sonner';
+import { pppoeService } from '../../services/pppoeService';
+import { routerService } from '../../services/routerService';
 
 interface ActiveSession {
   id: string;
@@ -44,6 +48,8 @@ export const SessionManagement: React.FC = () => {
   const [selectedRouter, setSelectedRouter] = useState<string>('');
   const [routers, setRouters] = useState<{id: string, name: string}[]>([]);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchSessions();
@@ -54,13 +60,20 @@ export const SessionManagement: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedRouter]);
+
   const fetchSessions = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/sessions/active`);
-      setSessions(response.data);
+      const data = await pppoeService.getActiveSessions();
+      setSessions(data);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar sesiones');
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      const message = error.response?.data?.message || 'Error al cargar sesiones';
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -68,9 +81,9 @@ export const SessionManagement: React.FC = () => {
 
   const fetchRouters = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/routers`);
-      setRouters(response.data);
-    } catch (err: any) {
+      const data = await routerService.getRouters();
+      setRouters(data);
+    } catch (err: unknown) {
       console.error('Error loading routers:', err);
     }
   };
@@ -86,14 +99,15 @@ export const SessionManagement: React.FC = () => {
       if (clientId) {
         await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${clientId}/sessions`);
       } else {
-        // Otherwise use a general session disconnect endpoint if available
-        // This would need to be implemented in the backend
         await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/sessions/${sessionId}`);
       }
-      
-      await fetchSessions(); // Refresh the list
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al desconectar sesión');
+      toast.success('Sesión desconectada');
+      await fetchSessions();
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      const message = error.response?.data?.message || 'Error al desconectar sesión';
+      setError(message);
+      toast.error(message);
     } finally {
       setDisconnecting(null);
     }
@@ -122,8 +136,13 @@ export const SessionManagement: React.FC = () => {
     return matchesSearch && matchesRouter;
   });
 
+  const paginatedSessions = filteredSessions.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   const totalSessions = sessions.length;
   const totalTraffic = sessions.reduce((acc, session) => acc + session.rxBytes + session.txBytes, 0);
+  const totalPages = Math.max(1, Math.ceil(filteredSessions.length / itemsPerPage));
 
   if (!hasPermission('pppoe.read')) {
     return (
@@ -210,9 +229,11 @@ export const SessionManagement: React.FC = () => {
         <CardContent>
           <div className="flex space-x-4">
             <div className="flex-1">
+              <Label htmlFor="session-search" className="sr-only">Buscar sesiones</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="session-search"
                   placeholder="Buscar por cliente, IP o router..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -221,7 +242,9 @@ export const SessionManagement: React.FC = () => {
               </div>
             </div>
             <div className="w-64">
+              <Label htmlFor="session-router" className="sr-only">Filtrar por router</Label>
               <select
+                id="session-router"
                 value={selectedRouter}
                 onChange={(e) => setSelectedRouter(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -243,7 +266,7 @@ export const SessionManagement: React.FC = () => {
         <CardHeader>
           <CardTitle>Lista de Sesiones</CardTitle>
           <CardDescription>
-            {filteredSessions.length} de {totalSessions} sesiones mostradas
+            Mostrando {paginatedSessions.length} de {filteredSessions.length} sesiones filtradas ({totalSessions} totales)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -268,7 +291,7 @@ export const SessionManagement: React.FC = () => {
             </div>
           ) : filteredSessions.length > 0 ? (
             <div className="space-y-4">
-              {filteredSessions.map((session) => (
+              {paginatedSessions.map((session) => (
                 <div key={session.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
@@ -355,6 +378,31 @@ export const SessionManagement: React.FC = () => {
                   : 'No hay conexiones PPPoE activas en este momento'
                 }
               </p>
+            </div>
+          )}
+          {filteredSessions.length > 0 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </p>
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
