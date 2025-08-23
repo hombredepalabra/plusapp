@@ -21,7 +21,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 interface PPPoEClient {
   id: string;
@@ -61,7 +61,7 @@ interface ClientStats {
 export const ClientDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { canManageClients, canControlClients, hasPermission } = usePermissions();
+  const { canManageClients, canControlClients } = usePermissions();
   
   const [client, setClient] = useState<PPPoEClient | null>(null);
   const [sessions, setSessions] = useState<ClientSession[]>([]);
@@ -82,8 +82,9 @@ export const ClientDetails: React.FC = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}`);
       setClient(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar cliente');
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Error al cargar cliente');
     }
   };
 
@@ -91,7 +92,7 @@ export const ClientDetails: React.FC = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/sessions`);
       setSessions(response.data);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading sessions:', err);
     }
   };
@@ -100,7 +101,7 @@ export const ClientDetails: React.FC = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/stats`);
       setStats(response.data);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error loading stats:', err);
     } finally {
       setLoading(false);
@@ -130,8 +131,9 @@ export const ClientDetails: React.FC = () => {
 
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}${endpoint}`);
       await fetchClientDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.message || `Error al ${action} cliente`);
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || `Error al ${action} cliente`);
     } finally {
       setActionLoading(null);
     }
@@ -146,8 +148,9 @@ export const ClientDetails: React.FC = () => {
     try {
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/reset-password`);
       await fetchClientDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al resetear contraseña');
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Error al resetear contraseña');
     } finally {
       setActionLoading(null);
     }
@@ -162,8 +165,9 @@ export const ClientDetails: React.FC = () => {
     try {
       await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/sessions`);
       await fetchClientSessions();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al desconectar sesiones');
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Error al desconectar sesiones');
     } finally {
       setActionLoading(null);
     }
@@ -177,8 +181,9 @@ export const ClientDetails: React.FC = () => {
     try {
       await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}`);
       navigate('/dashboard/clients');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar cliente');
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      setError(error.response?.data?.message || 'Error al eliminar cliente');
     }
   };
 
@@ -503,7 +508,7 @@ export const ClientDetails: React.FC = () => {
                   
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-600">
-                      {stats.totalPackets.toLocaleString()}
+                      {stats.totalPackets?.toLocaleString() || '0'}
                     </div>
                     <p className="text-sm text-slate-600">Paquetes Totales</p>
                   </div>
