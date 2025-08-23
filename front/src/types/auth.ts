@@ -42,7 +42,7 @@
  * Body: { currentPassword: string, newPassword: string }
  * Response: { success: boolean, message: string }
  * 
- * GET /api/auth/profile
+ * GET /api/users/profile
  * Headers: { Authorization: "Bearer <token>" }
  * Response: User
  */

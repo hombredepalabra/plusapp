@@ -24,7 +24,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Configurar token en headers
@@ -34,13 +34,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(savedToken);
       axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
       // Obtener perfil del usuario
-      fetchUserProfile();
+      fetchUserProfile().finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
   const fetchUserProfile = async (): Promise<void> => {
     try {
-      const response = await axios.get('/api/auth/profile');
+      const response = await axios.get('/api/users/profile');
       setUser(response.data);
     } catch (err) {
       // Token inválido, limpiar
