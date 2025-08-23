@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserProfile = async (): Promise<void> => {
     try {
-      const response = await axios.get('/api/auth/profile');
+      const response = await axios.get('/api/users/profile');
       setUser(response.data);
     } catch (err) {
       // Token inválido, limpiar

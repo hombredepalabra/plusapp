@@ -73,7 +73,7 @@ Esta aplicación React + TypeScript implementa un sistema completo de autenticac
 
 ### 2. 👤 Gestión de Usuario
 
-#### `GET /api/auth/profile`
+#### `GET /api/users/profile`
 ```json
 // Headers: Authorization: Bearer <token>
 
