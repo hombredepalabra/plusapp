@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import axios from 'axios';
+import { toast } from 'sonner';
 import { firewallService } from '../../../services/firewallService';
+import { routerService } from '../../../services/routerService';
 
 interface FirewallRule {
   id: string;
@@ -52,11 +54,17 @@ export const FirewallManagement: React.FC = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [unblocking, setUnblocking] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     fetchFirewallRules();
     fetchRouters();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedRouter]);
 
   const fetchFirewallRules = async () => {
     try {
@@ -67,7 +75,9 @@ export const FirewallManagement: React.FC = () => {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.message
         : undefined;
-      setError(message || 'Error al cargar reglas de firewall');
+      const fallback = 'Error al cargar reglas de firewall';
+      setError(message || fallback);
+      toast.error(message || fallback);
     } finally {
       setLoading(false);
     }
@@ -75,10 +85,8 @@ export const FirewallManagement: React.FC = () => {
 
   const fetchRouters = async () => {
     try {
-      const response = await axios.get<Array<{ id: string; name: string; isActive: boolean }>>(
-        `${import.meta.env.VITE_BACKEND_URL}/api/routers`
-      );
-      setRouters(response.data.filter(r => r.isActive));
+      const data = await routerService.getRouters();
+      setRouters(data.filter(r => r.isActive));
     } catch (err: unknown) {
       console.error('Error loading routers:', err);
     }
@@ -120,6 +128,7 @@ export const FirewallManagement: React.FC = () => {
         routerId: formData.routerId
       });
 
+      toast.success('IP bloqueada correctamente');
       setFormData({ ipAddress: '', comment: '', routerId: '' });
       setShowAddForm(false);
       await fetchFirewallRules();
@@ -127,7 +136,7 @@ export const FirewallManagement: React.FC = () => {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.message
         : undefined;
-      setError(message || 'Error al bloquear IP');
+      toast.error(message || 'Error al bloquear IP');
     } finally {
       setSubmitting(false);
     }
@@ -141,13 +150,13 @@ export const FirewallManagement: React.FC = () => {
     setUnblocking(ruleId);
     try {
       await firewallService.unblockIP(ipAddress);
-      
+      toast.success('IP desbloqueada correctamente');
       await fetchFirewallRules();
     } catch (err: unknown) {
       const message = axios.isAxiosError(err)
         ? err.response?.data?.message
         : undefined;
-      setError(message || 'Error al desbloquear IP');
+      toast.error(message || 'Error al desbloquear IP');
     } finally {
       setUnblocking(null);
     }
@@ -158,15 +167,20 @@ export const FirewallManagement: React.FC = () => {
     const matchesSearch = rule.ipAddress.includes(searchTerm) ||
                          rule.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          rule.routerName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesRouter = !selectedRouter || rule.routerId === selectedRouter;
-    
+
     return matchesSearch && matchesRouter;
   });
 
+  const paginatedRules = filteredRules.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   const totalRules = rules.length;
   const activeRules = rules.filter(rule => rule.isActive).length;
   const uniqueRouters = new Set(rules.map(rule => rule.routerId)).size;
+  const totalPages = Math.max(1, Math.ceil(filteredRules.length / itemsPerPage));
 
   if (!hasPermission('firewall.read')) {
     return (
@@ -344,9 +358,11 @@ export const FirewallManagement: React.FC = () => {
         <CardContent>
           <div className="flex space-x-4">
             <div className="flex-1">
+              <Label htmlFor="firewall-search" className="sr-only">Buscar reglas</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="firewall-search"
                   placeholder="Buscar por IP, comentario o router..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -355,7 +371,9 @@ export const FirewallManagement: React.FC = () => {
               </div>
             </div>
             <div className="w-64">
+              <Label htmlFor="firewall-router" className="sr-only">Filtrar por router</Label>
               <select
+                id="firewall-router"
                 value={selectedRouter}
                 onChange={(e) => setSelectedRouter(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -377,7 +395,7 @@ export const FirewallManagement: React.FC = () => {
         <CardHeader>
           <CardTitle>Reglas de Firewall</CardTitle>
           <CardDescription>
-            {filteredRules.length} de {totalRules} reglas mostradas
+            Mostrando {paginatedRules.length} de {filteredRules.length} reglas filtradas ({totalRules} totales)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -397,7 +415,7 @@ export const FirewallManagement: React.FC = () => {
             </div>
           ) : filteredRules.length > 0 ? (
             <div className="space-y-4">
-              {filteredRules.map((rule) => (
+              {paginatedRules.map((rule) => (
                 <div key={rule.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -468,6 +486,31 @@ export const FirewallManagement: React.FC = () => {
                   Agregar Primera Regla
                 </Button>
               )}
+            </div>
+          )}
+          {filteredRules.length > 0 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                Página {currentPage} de {totalPages}
+              </p>
+              <div className="space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
