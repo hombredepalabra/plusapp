@@ -154,7 +154,9 @@ class AuthService:
                 'id': str(user.id),
                 'email': user.email,
                 'name': user.username,
+                'role': user.role,
                 'twoFactorEnabled': user.two_factor_enabled,
+                'isActive': user.is_active,
                 'createdAt': user.created_at.isoformat() + 'Z',
                 'lastLogin': datetime.utcnow().isoformat() + 'Z'
             },

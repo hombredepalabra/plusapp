@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
+import { usePermissions, type Permission } from '../../hooks/usePermissions';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
@@ -16,13 +17,12 @@ import {
   RefreshCw,
   Building
 } from 'lucide-react';
-import { usePermissions } from '../../hooks/usePermissions';
 
 interface NavigationItem {
   name: string;
   href: string;
-  icon: React.ComponentType<any>;
-  permission?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  permission?: Permission;
   badge?: string;
 }
 
@@ -98,7 +98,7 @@ export const Sidebar: React.FC = () => {
   const { hasPermission, canManageUsers, getRoleDisplayName, user } = usePermissions();
 
   const renderNavigationItem = (item: NavigationItem) => {
-    if (item.permission && !hasPermission(item.permission as any)) {
+    if (item.permission && !hasPermission(item.permission)) {
       return null;
     }
 
@@ -183,7 +183,7 @@ export const Sidebar: React.FC = () => {
             </div>
           )}
           <p>Versión 1.0.0</p>
-          <p>© 2025 MikroTik Manager</p>
+          <p>© 2025 Ariels875</p>
         </div>
       </div>
     </div>

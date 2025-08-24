@@ -43,9 +43,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchUserProfile = async (): Promise<void> => {
     try {
       const response = await axios.get('/api/users/profile');
-      setUser(response.data);
+      const userData = response.data;
+      console.log('User profile data:', userData);
+      const user: User = {
+        id: userData.id.toString(),
+        username: userData.username,
+        email: userData.email,
+        name: userData.username,
+        twoFactorEnabled: userData.two_factor_enabled,
+        role: userData.role,
+        isActive: userData.is_active,
+        createdAt: userData.created_at,
+        lastLogin: userData.last_login
+      };
+      setUser(user);
     } catch (err) {
-      // Token inválido, limpiar
+      console.error('Error al cargar perfil:', err);
       logout();
     }
   };
@@ -59,15 +72,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data: LoginResponse = response.data;
       
       if (data.success && !data.requiresTwoFactor && data.token && data.user) {
+        const userData = data.user;
+        console.log('User data on login:', userData);
+        const user: User = {
+          id: userData.id.toString(),
+          username: userData.username || userData.name,
+          email: userData.email,
+          name: userData.name,
+          twoFactorEnabled: userData.twoFactorEnabled,
+          role: userData.role,
+          isActive: userData.isActive || true,
+          createdAt: userData.createdAt,
+          lastLogin: userData.lastLogin
+        };
         setToken(data.token);
-        setUser(data.user);
+        setUser(user);
         localStorage.setItem('authToken', data.token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       }
       
       return data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al iniciar sesión';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al iniciar sesión';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -84,15 +110,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const data: AuthResponse = response.data;
       
       if (data.success) {
+        const userData = data.user;
+        console.log('User data on 2FA verification:', userData);
+        const user: User = {
+          id: userData.id.toString(),
+          username: userData.username || userData.name,
+          email: userData.email,
+          name: userData.name,
+          twoFactorEnabled: userData.twoFactorEnabled,
+          role: userData.role,
+          isActive: userData.isActive,
+          createdAt: userData.createdAt,
+          lastLogin: userData.lastLogin
+        };
         setToken(data.token);
-        setUser(data.user);
+        setUser(user);
         localStorage.setItem('authToken', data.token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       }
       
       return data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Código 2FA inválido';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Código 2FA inválido';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -115,8 +154,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/api/auth/setup-2fa');
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al configurar 2FA';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al configurar 2FA';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -135,8 +174,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(prev => prev ? { ...prev, twoFactorEnabled: true } : null);
       }
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al habilitar 2FA';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al habilitar 2FA';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -154,8 +193,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(prev => prev ? { ...prev, twoFactorEnabled: false } : null);
       }
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al deshabilitar 2FA';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al deshabilitar 2FA';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -170,8 +209,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/api/auth/forgot-password', { email });
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al enviar email de recuperación';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al enviar email de recuperación';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -186,8 +225,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/api/auth/reset-password', { token, newPassword });
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al restablecer contraseña';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al restablecer contraseña';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -202,8 +241,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/api/auth/change-password', { currentPassword, newPassword });
       return response.data;
-    } catch (err: any) {
-      const errorMessage = err.response?.data?.message || 'Error al cambiar contraseña';
+    } catch (err: unknown) {
+      const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al cambiar contraseña';
       setError(errorMessage);
       throw new Error(errorMessage);
     } finally {

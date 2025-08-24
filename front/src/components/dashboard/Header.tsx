@@ -40,7 +40,7 @@ export const Header: React.FC = () => {
             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-slate-900 text-white">
-                  {user ? getInitials(user.name) : 'U'}
+                  {user?.name ? getInitials(user.name) : 'U'}
                 </AvatarFallback>
               </Avatar>
             </Button>
