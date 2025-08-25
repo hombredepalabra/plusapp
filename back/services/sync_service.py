@@ -1,6 +1,6 @@
 from datetime import datetime
 from models import db
-from models.router import Router, Secret
+from models.router import Router, Secret, RouterFirewall
 from models.sync_log import SyncLog
 from services.mikrotik_service import MikroTikService
 
@@ -106,3 +106,53 @@ class SyncService:
         
         logs = query.order_by(SyncLog.started_at.desc()).limit(limit).all()
         return [log.to_dict() for log in logs]
+
+    @staticmethod
+    def sync_firewall_rules(router_id: int):
+        """Sincroniza las reglas de firewall de un router específico.
+
+        Returns
+        -------
+        tuple[bool, dict | str]
+            ``(True, {..})`` si la sincronización fue exitosa, ``(False, 'mensaje')`` en caso de error.
+        """
+
+        router = Router.query.get(router_id)
+        if not router:
+            return False, "Router no encontrado"
+
+        rules, error = MikroTikService.get_firewall_rules(router)
+        if error:
+            return False, f"Error obteniendo reglas de firewall: {error}"
+
+        # Reemplazar reglas existentes
+        RouterFirewall.query.filter_by(router_id=router_id).delete()
+        db.session.commit()
+
+        synced = 0
+        for rule in rules or []:
+            new_rule = RouterFirewall(
+                router_id=router_id,
+                firewall_id=rule.get('.id', ''),
+                ip_address=rule.get('src-address', ''),
+                comment=rule.get('comment', ''),
+                creation_date=rule.get('time') or rule.get('creation-time'),
+                is_active=rule.get('disabled', 'false') != 'true',
+                created_at=datetime.utcnow()
+            )
+
+            if hasattr(new_rule, 'protocol'):
+                new_rule.protocol = rule.get('protocol')
+            if hasattr(new_rule, 'port'):
+                new_rule.port = rule.get('dst-port')
+            if hasattr(new_rule, 'action'):
+                new_rule.action = rule.get('action')
+            if hasattr(new_rule, 'chain'):
+                new_rule.chain = rule.get('chain')
+
+            db.session.add(new_rule)
+            synced += 1
+
+        db.session.commit()
+
+        return True, {"router_id": router_id, "rules_synced": synced}
