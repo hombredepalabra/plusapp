@@ -17,8 +17,11 @@ class BranchController:
             # Limit per_page to prevent abuse
             per_page = min(per_page, 100)
             
-            branches = Branch.query.filter_by(is_active=True).paginate(
-                page=page, per_page=per_page, error_out=False
+            branches = db.paginate(
+                Branch.query.filter_by(is_active=True),
+                page=page,
+                per_page=per_page,
+                error_out=False
             )
             
             result = []

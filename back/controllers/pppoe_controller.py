@@ -28,8 +28,11 @@ class PPPoEController:
                     SyncService.sync_router(router.id, 'auto')
         
         # Consultar datos actualizados
-        clients = Secret.query.filter_by(is_active=True).paginate(
-            page=page, per_page=per_page, error_out=False
+        clients = db.paginate(
+            Secret.query.filter_by(is_active=True),
+            page=page,
+            per_page=per_page,
+            error_out=False
         )
         
         return jsonify({

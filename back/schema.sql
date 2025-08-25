@@ -69,8 +69,9 @@ CREATE TABLE router_firewall (
     comment VARCHAR(255),
     creation_date VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (router_id, firewall_id),
-    CONSTRAINT fk_router_firewall_routers 
+    CONSTRAINT fk_router_firewall_routers
         FOREIGN KEY (router_id) REFERENCES routers(id)
 );
 

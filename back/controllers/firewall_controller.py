@@ -41,7 +41,12 @@ class FirewallController:
                 query = query.filter_by(router_id=router_id)
             
             # Paginar resultados
-            rules = query.paginate(page=page, per_page=per_page, error_out=False)
+            rules = db.paginate(
+                query,
+                page=page,
+                per_page=per_page,
+                error_out=False
+            )
             
             return jsonify({
                 'rules': [
@@ -57,7 +62,7 @@ class FirewallController:
                         'port': getattr(r, 'port', None),
                         'action': getattr(r, 'action', 'drop'),
                         'chain': getattr(r, 'chain', 'input'),
-                        'created_at': r.created_at.isoformat() if hasattr(r, 'created_at') and r.created_at else None
+                        'created_at': r.created_at.isoformat() if r.created_at else None
                     }
                     for r in rules.items
                 ],
@@ -272,7 +277,7 @@ class FirewallController:
                 'port': getattr(rule, 'port', None),
                 'action': getattr(rule, 'action', 'drop'),
                 'chain': getattr(rule, 'chain', 'input'),
-                'created_at': rule.created_at.isoformat() if hasattr(rule, 'created_at') and rule.created_at else None,
+                'created_at': rule.created_at.isoformat() if rule.created_at else None,
                 'mikrotik_status': 'found' if mikrotik_rule else 'not_found',
                 'source': 'database'
             }), 200
@@ -546,7 +551,7 @@ class FirewallController:
                 'total_rules': RouterFirewall.query.filter_by(is_active=True).count(),
                 'rules_by_router': {},
                 'recent_blocks': RouterFirewall.query.filter_by(is_active=True).order_by(
-                    RouterFirewall.created_at.desc() if hasattr(RouterFirewall, 'created_at') else RouterFirewall.creation_date.desc()
+                    RouterFirewall.created_at.desc()
                 ).limit(10).all()
             }
             
