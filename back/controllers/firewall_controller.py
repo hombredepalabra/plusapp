@@ -115,10 +115,14 @@ class FirewallController:
                     'error': f'Error al crear regla en MikroTik: {error}'
                 }), 500
 
+            firewall_id = None
+            if isinstance(result, dict):
+                firewall_id = result.get('.id') or result.get('id')
+
             # 2. Si se creó exitosamente en MikroTik, guardarlo en DB
             rule = RouterFirewall(
                 router_id=router.id,
-                firewall_id=secrets.token_hex(8),
+                firewall_id=firewall_id or secrets.token_hex(8),
                 ip_address=ip_address,
                 comment=mikrotik_data['comment'],
                 creation_date=datetime.utcnow().isoformat(),
@@ -187,26 +191,10 @@ class FirewallController:
             if not router or not router.is_active:
                 return jsonify({'error': 'Router no encontrado o inactivo'}), 404
 
-            # 1. Buscar la regla en MikroTik para obtener su ID interno
-            mikrotik_rules, error = MikroTikService.get_firewall_rules(router)
-            if error:
-                return jsonify({
-                    'error': f'Error al consultar MikroTik: {error}',
-                    'warning': 'Procediendo con eliminación solo en base de datos'
-                }), 500
-
-            # Encontrar la regla en MikroTik
-            mikrotik_rule_id = None
-            if mikrotik_rules:
-                for fw_rule in mikrotik_rules:
-                    if fw_rule.get('src-address') == ip_address:
-                        mikrotik_rule_id = fw_rule.get('.id')
-                        break
-
-            # 2. Eliminar de MikroTik primero (si existe)
+            # 1. Eliminar de MikroTik usando el ID almacenado
             mikrotik_deleted = False
-            if mikrotik_rule_id:
-                result, error = MikroTikService.remove_firewall_rule(router, mikrotik_rule_id)
+            if rule.firewall_id:
+                _, error = MikroTikService.remove_firewall_rule(router, rule.firewall_id)
                 if error:
                     return jsonify({
                         'error': f'Error al eliminar regla de MikroTik: {error}',
@@ -214,24 +202,24 @@ class FirewallController:
                     }), 500
                 mikrotik_deleted = True
 
-            # 3. Desactivar en la base de datos
+            # 2. Desactivar en la base de datos
             rule_data = {
                 'id': rule.firewall_id,
                 'ip_address': rule.ip_address,
                 'router_id': rule.router_id,
                 'comment': rule.comment
             }
-            
+
             rule.is_active = False
             db.session.commit()
-            
+
             return jsonify({
                 'message': 'IP desbloqueada exitosamente',
                 'deleted_rule': rule_data,
                 'mikrotik_deleted': mikrotik_deleted,
                 'database_updated': True,
                 'details': {
-                    'mikrotik_status': 'eliminado' if mikrotik_deleted else 'no encontrado en MikroTik',
+                    'mikrotik_status': 'eliminado' if mikrotik_deleted else 'error en eliminación',
                     'database_status': 'desactivado'
                 }
             }), 200
@@ -361,25 +349,10 @@ class FirewallController:
             if not router or not router.is_active:
                 return jsonify({'error': 'Router no encontrado o inactivo'}), 404
 
-            # Buscar la regla en MikroTik
-            mikrotik_rules, error = MikroTikService.get_firewall_rules(router)
-            if error:
-                return jsonify({
-                    'error': f'Error al consultar MikroTik: {error}'
-                }), 500
-
-            # Encontrar la regla en MikroTik
-            mikrotik_rule_id = None
-            if mikrotik_rules:
-                for fw_rule in mikrotik_rules:
-                    if fw_rule.get('src-address') == rule.ip_address:
-                        mikrotik_rule_id = fw_rule.get('.id')
-                        break
+            mikrotik_rule_id = rule.firewall_id
 
             if not mikrotik_rule_id:
-                return jsonify({
-                    'error': 'Regla no encontrada en MikroTik'
-                }), 404
+                return jsonify({'error': 'ID de MikroTik no disponible'}), 404
 
             # Preparar datos para actualizar en MikroTik
             mikrotik_update_data = {}
@@ -446,26 +419,10 @@ class FirewallController:
             if not router or not router.is_active:
                 return jsonify({'error': 'Router no encontrado o inactivo'}), 404
 
-            # Buscar la regla en MikroTik
-            mikrotik_rules, error = MikroTikService.get_firewall_rules(router)
-            if error:
-                return jsonify({
-                    'error': f'Error al consultar MikroTik: {error}',
-                    'warning': 'Procediendo con eliminación solo en base de datos'
-                }), 500
-
-            # Encontrar la regla en MikroTik
-            mikrotik_rule_id = None
-            if mikrotik_rules:
-                for fw_rule in mikrotik_rules:
-                    if fw_rule.get('src-address') == rule.ip_address:
-                        mikrotik_rule_id = fw_rule.get('.id')
-                        break
-
-            # Eliminar de MikroTik primero (si existe)
+            # Eliminar de MikroTik usando el ID almacenado
             mikrotik_deleted = False
-            if mikrotik_rule_id:
-                result, error = MikroTikService.remove_firewall_rule(router, mikrotik_rule_id)
+            if rule.firewall_id:
+                _, error = MikroTikService.remove_firewall_rule(router, rule.firewall_id)
                 if error:
                     return jsonify({
                         'error': f'Error al eliminar regla de MikroTik: {error}',
@@ -490,7 +447,7 @@ class FirewallController:
                 'mikrotik_deleted': mikrotik_deleted,
                 'database_deleted': True,
                 'details': {
-                    'mikrotik_status': 'eliminado' if mikrotik_deleted else 'no encontrado en MikroTik',
+                    'mikrotik_status': 'eliminado' if mikrotik_deleted else 'error en eliminación',
                     'database_status': 'eliminado'
                 }
             }), 200
