@@ -206,3 +206,26 @@ class MikroTikService:
         """
         return MikroTikService._request_with_method(router, f"ppp/secret/{secret_id}", 'DELETE')
 
+    # ------------------------------------------------------------------
+    # Firewall operations
+    # ------------------------------------------------------------------
+    @staticmethod
+    def get_firewall_rules(router: Router) -> Tuple[Optional[Any], Optional[str]]:
+        """Return the configured firewall rules of the router."""
+        return MikroTikService._request(router, "ip/firewall/filter")
+
+    @staticmethod
+    def add_firewall_rule(router: Router, rule_data: dict) -> Tuple[Optional[Any], Optional[str]]:
+        """Create a new firewall rule in the router."""
+        return MikroTikService._request_with_method(router, "ip/firewall/filter", 'POST', rule_data)
+
+    @staticmethod
+    def update_firewall_rule(router: Router, rule_id: str, rule_data: dict) -> Tuple[Optional[Any], Optional[str]]:
+        """Update an existing firewall rule in the router."""
+        return MikroTikService._request_with_method(router, f"ip/firewall/filter/{rule_id}", 'PUT', rule_data)
+
+    @staticmethod
+    def remove_firewall_rule(router: Router, rule_id: str) -> Tuple[Optional[Any], Optional[str]]:
+        """Delete a firewall rule from the router."""
+        return MikroTikService._request_with_method(router, f"ip/firewall/filter/{rule_id}", 'DELETE')
+
