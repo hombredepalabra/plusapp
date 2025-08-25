@@ -21,8 +21,9 @@ class UserController:
         # Limit per_page to prevent abuse
         per_page = min(per_page, 100)
         
+        stmt = db.select(User)
         users = db.paginate(
-            User.query,
+            stmt,
             page=page,
             per_page=per_page,
             error_out=False
