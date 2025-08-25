@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import secrets
 import string
+from models import db
 
 def generate_random_string(length=32):
     """Genera string aleatorio"""
@@ -33,7 +34,8 @@ def calculate_uptime(start_time):
 
 def paginate_query(query, page, per_page):
     """Pagina una query de SQLAlchemy"""
-    return query.paginate(
+    return db.paginate(
+        query,
         page=page,
         per_page=per_page,
         error_out=False

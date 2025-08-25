@@ -59,14 +59,15 @@ class Secret(db.Model):
 class RouterFirewall(db.Model):
     """Modelo RouterFirewall basado en tabla 'router_firewall'"""
     __tablename__ = 'router_firewall'
-    
+
     router_id = db.Column(db.Integer, db.ForeignKey('routers.id'), primary_key=True)
     firewall_id = db.Column(db.String(50), primary_key=True)
     ip_address = db.Column(db.String(20), nullable=False)
     comment = db.Column(db.String(255), nullable=True)
     creation_date = db.Column(db.String(100), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
     # Relaciones
     router = db.relationship('Router', back_populates='firewall_rules')
 
