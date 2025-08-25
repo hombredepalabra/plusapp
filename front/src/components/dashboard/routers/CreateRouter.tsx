@@ -7,8 +7,20 @@ import { Label } from '../../ui/label';
 import { Alert, AlertDescription } from '../../ui/alert';
 import { ArrowLeft, Save, TestTube, AlertTriangle, CheckCircle } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { CreateRouterRequest, Branch } from '../../../types/router';
+import type { CreateRouterRequest, Branch } from '../../../types/router';
 import axios from 'axios';
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Error de conexión';
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'Error desconocido';
+};
 
 export const CreateRouter: React.FC = () => {
   const navigate = useNavigate();
@@ -42,8 +54,8 @@ export const CreateRouter: React.FC = () => {
       if (response.data.length > 0) {
         setFormData(prev => ({ ...prev, branchId: response.data[0].id }));
       }
-    } catch (err: any) {
-      console.error('Error loading branches:', err);
+    } catch (error) {
+      setError(getErrorMessage(error));
       // Create a default branch if none exist
       setBranches([{ id: 1, name: 'Principal', location: 'Oficina Central', isActive: true, createdAt: '', updatedAt: '' }]);
     }
@@ -78,11 +90,8 @@ export const CreateRouter: React.FC = () => {
         success: true,
         message: response.data.message || 'Conexión exitosa'
       });
-    } catch (err: any) {
-      setTestResult({
-        success: false,
-        message: err.response?.data?.message || 'Error de conexión'
-      });
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setTesting(false);
     }
@@ -106,8 +115,8 @@ export const CreateRouter: React.FC = () => {
       setTimeout(() => {
         navigate('/dashboard/routers');
       }, 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al crear router');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

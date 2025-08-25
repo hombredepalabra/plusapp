@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
@@ -8,6 +8,18 @@ import { Alert, AlertDescription } from '../../ui/alert';
 import { ArrowLeft, Save, User, AlertTriangle, CheckCircle } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import axios from 'axios';
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Error de conexión';
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'Error desconocido';
+};
 
 interface Router {
   id: string;
@@ -66,15 +78,8 @@ export const EditClient: React.FC = () => {
       navigate('/dashboard/clients');
     }
   }, [canManageClients, navigate]);
-
-  useEffect(() => {
-    if (id) {
-      fetchClientDetails();
-      fetchRouters();
-    }
-  }, [id]);
-
-  const fetchClientDetails = async () => {
+  
+  const fetchClientDetails = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}`);
       const clientData = response.data;
@@ -88,21 +93,26 @@ export const EditClient: React.FC = () => {
         contract: clientData.contract || '',
         routerId: clientData.routerId || ''
       });
-    } catch (err: any) {
-      setError('Error al cargar cliente');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
-  };
-
-  const fetchRouters = async () => {
+  },[id]);
+  
+  const fetchRouters = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/routers`);
       setRouters(response.data.filter((router: Router) => router.isActive));
-    } catch (err: any) {
-      setError('Error al cargar routers');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setInitialLoading(false);
     }
-  };
+  },[]);
+      
+  useEffect(() => {
+    fetchClientDetails();
+    fetchRouters();
+  }, [fetchClientDetails, fetchRouters]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -180,8 +190,8 @@ export const EditClient: React.FC = () => {
         navigate(`/dashboard/clients/${id}`);
       }, 2000);
       
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al actualizar cliente');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

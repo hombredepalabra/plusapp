@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
@@ -22,6 +22,18 @@ import {
 } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import axios from 'axios';
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Error de conexión';
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'Error desconocido';
+};
 
 interface PPPoEClient {
   id: string;
@@ -61,7 +73,7 @@ interface ClientStats {
 export const CreateClient: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { canManageClients, canControlClients, hasPermission } = usePermissions();
+  const { canManageClients, canControlClients } = usePermissions();
   
   const [client, setClient] = useState<PPPoEClient | null>(null);
   const [sessions, setSessions] = useState<ClientSession[]>([]);
@@ -69,47 +81,45 @@ export const CreateClient: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (id) {
-      fetchClientDetails();
-      fetchClientSessions();
-      fetchClientStats();
-    }
-  }, [id]);
-
-  const fetchClientDetails = async () => {
+  
+  const fetchClientDetails = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}`);
       setClient(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar cliente');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
-  };
+  },[id]);
 
-  const fetchClientSessions = async () => {
+  const fetchClientSessions = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/sessions`);
       setSessions(response.data);
-    } catch (err: any) {
-      console.error('Error loading sessions:', err);
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
-  };
-
-  const fetchClientStats = async () => {
+  },[id]);
+  
+  const fetchClientStats = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/stats`);
       setStats(response.data);
-    } catch (err: any) {
-      console.error('Error loading stats:', err);
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
-
+  },[id]);
+  
+  useEffect(() => {
+    fetchClientDetails();
+    fetchClientSessions();        
+    fetchClientStats();
+  }, [fetchClientDetails, fetchClientSessions, fetchClientStats]);
+  
   const handleStatusChange = async (action: 'activate' | 'suspend' | 'block' | 'unblock') => {
     if (!client) return;
-
+    
     setActionLoading(action);
     try {
       let endpoint = '';
@@ -130,8 +140,8 @@ export const CreateClient: React.FC = () => {
 
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}${endpoint}`);
       await fetchClientDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.message || `Error al ${action} cliente`);
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setActionLoading(null);
     }
@@ -146,8 +156,8 @@ export const CreateClient: React.FC = () => {
     try {
       await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/reset-password`);
       await fetchClientDetails();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al resetear contraseña');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setActionLoading(null);
     }
@@ -162,8 +172,8 @@ export const CreateClient: React.FC = () => {
     try {
       await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/sessions`);
       await fetchClientSessions();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al desconectar sesiones');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setActionLoading(null);
     }
@@ -177,8 +187,8 @@ export const CreateClient: React.FC = () => {
     try {
       await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}`);
       navigate('/dashboard/clients');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar cliente');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
   };
 

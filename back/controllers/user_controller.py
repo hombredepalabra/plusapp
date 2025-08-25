@@ -4,6 +4,8 @@ from models import db
 from models.user import User, SecurityEvent
 from utils.decorators import require_role, handle_errors
 from utils.validators import validate_email, validate_password
+from utils.response import success_response, error_response
+from utils.validation import validate_required_fields
 
 class UserController:
     @staticmethod
@@ -16,16 +18,37 @@ class UserController:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
+        # Limit per_page to prevent abuse
+        per_page = min(per_page, 100)
+        
         users = User.query.paginate(
             page=page, per_page=per_page, error_out=False
         )
         
-        return jsonify({
-            'users': [user.to_dict() for user in users.items],
-            'total': users.total,
-            'pages': users.pages,
-            'current_page': page
-        }), 200
+        result = []
+        for user in users.items:
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': user.role,
+                'is_active': user.is_active,
+                'two_factor_enabled': user.two_factor_enabled,
+                'last_login': user.last_login.isoformat() if user.last_login else None,
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'updated_at': user.updated_at.isoformat() if user.updated_at else None
+            }
+            result.append(user_data)
+        
+        return success_response({
+            'users': result,
+            'pagination': {
+                'page': users.page,
+                'per_page': users.per_page,
+                'total': users.total,
+                'pages': users.pages
+            }
+        })
     
     @staticmethod
     @jwt_required()

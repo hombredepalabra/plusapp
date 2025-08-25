@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
@@ -21,8 +21,20 @@ import {
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../ui/dropdown-menu';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { Router, RouterFilters } from '../../../types/router';
+import type { Router, RouterFilters } from '../../../types/router';
 import axios from 'axios';
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Error de conexión';
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'Error desconocido';
+};
 
 export const RouterList: React.FC = () => {
   const { canManageRouters, hasPermission } = usePermissions();
@@ -32,11 +44,7 @@ export const RouterList: React.FC = () => {
   const [filters, setFilters] = useState<RouterFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchRouters();
-  }, [filters]);
-
-  const fetchRouters = async () => {
+  const fetchRouters = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -48,12 +56,16 @@ export const RouterList: React.FC = () => {
       const response = await axios.get(`/api/routers?${params.toString()}`);
       setRouters(response.data);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar routers');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchRouters();
+  }, [fetchRouters]);
 
   const handleSearch = () => {
     setFilters({ ...filters, search: searchTerm });
@@ -63,8 +75,8 @@ export const RouterList: React.FC = () => {
     try {
       await axios.post(`/api/routers/${routerId}/test`);
       fetchRouters(); // Refresh to get updated status
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al probar conexión');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
   };
 
@@ -76,8 +88,8 @@ export const RouterList: React.FC = () => {
     try {
       await axios.delete(`/api/routers/${routerId}`);
       fetchRouters();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar router');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
   };
 

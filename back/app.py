@@ -76,6 +76,9 @@ def create_app():
     from routes.user_routes import user_bp
     app.register_blueprint(user_bp, url_prefix='/api/users')
 
+    from routes.branch_routes import branch_bp
+    app.register_blueprint(branch_bp)
+
     # Crear tablas
     with app.app_context():
         db.create_all()

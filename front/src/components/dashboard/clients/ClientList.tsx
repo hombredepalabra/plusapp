@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
@@ -12,7 +12,6 @@ import {
   WifiOff,
   User,
   AlertTriangle,
-  Settings,
   Eye,
   Edit,
   Trash2,
@@ -27,6 +26,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { usePermissions } from '../../../hooks/usePermissions';
 import type { PPPoEClient, PPPoEClientFilters, Router } from '../../../types/router';
 import axios from 'axios';
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Error de conexión';
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'Error desconocido';
+};
 
 interface ClientsResponse {
   clients: PPPoEClient[];
@@ -44,12 +55,7 @@ export const ClientList: React.FC = () => {
   const [filters, setFilters] = useState<PPPoEClientFilters>({});
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchClients();
-    fetchRouters();
-  }, [filters]);
-
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -64,21 +70,26 @@ export const ClientList: React.FC = () => {
       );
       setClients(response.data.clients || []);
       setError(null);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar clientes');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  const fetchRouters = async () => {
+  const fetchRouters = useCallback(async () => {
     try {
       const response = await axios.get('/api/routers');
       setRouters(response.data.filter((r: Router) => r.isActive));
-    } catch (err: any) {
-      console.error('Error loading routers:', err);
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchClients();
+    fetchRouters();
+  }, [fetchClients, fetchRouters]);
 
   const handleSearch = () => {
     setFilters({ ...filters, search: searchTerm });
@@ -118,8 +129,8 @@ export const ClientList: React.FC = () => {
         await axios.post(endpoint);
         fetchClients();
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || `Error al ${action} cliente`);
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
   };
 
@@ -131,8 +142,8 @@ export const ClientList: React.FC = () => {
     try {
       await axios.delete(`/api/pppoe/clients/${clientId}`);
       fetchClients();
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar cliente');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
   };
 
@@ -255,7 +266,7 @@ export const ClientList: React.FC = () => {
 
               <select
                 value={filters.status || ''}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value as any })}
+                onChange={(e) => setFilters({ ...filters, status: e.target.value === '' ? undefined : e.target.value as 'active' | 'suspended' | 'blocked' | 'disconnected' })}
                 className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="">Todos los estados</option>
@@ -362,7 +373,7 @@ export const ClientList: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">IP:</span>
-                  <span className="text-sm font-mono text-slate-900">{client.ipAddress}</span>
+                  <span className="text-sm font-mono text-slate-900">{client.ipAddress || 'Sin IP asignada'}</span>
                 </div>
                 {client.profile && (
                   <div className="flex items-center justify-between">

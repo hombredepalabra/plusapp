@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
@@ -7,8 +7,20 @@ import { Label } from '../../ui/label';
 import { Alert, AlertDescription } from '../../ui/alert';
 import { ArrowLeft, Save, TestTube, AlertTriangle, CheckCircle } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { Router, UpdateRouterRequest, Branch } from '../../../types/router';
+import type { Router, UpdateRouterRequest, Branch } from '../../../types/router';
 import axios from 'axios';
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Error de conexión';
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'Error desconocido';
+};
 
 export const EditRouter: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,19 +37,7 @@ export const EditRouter: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
-  useEffect(() => {
-    if (!canManageRouters()) {
-      navigate('/dashboard/routers');
-      return;
-    }
-    
-    if (id) {
-      fetchRouterDetails();
-      fetchBranches();
-    }
-  }, [id, canManageRouters, navigate]);
-
-  const fetchRouterDetails = async () => {
+  const fetchRouterDetails = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}`);
       const routerData = response.data;
@@ -50,23 +50,34 @@ export const EditRouter: React.FC = () => {
         branchId: routerData.branchId,
         isActive: routerData.isActive
       });
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar router');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const fetchBranches = async () => {
+  const fetchBranches = useCallback(async () => {
     try {
       const response = await axios.get('/api/branches');
       setBranches(response.data);
-    } catch (err: any) {
-      console.error('Error loading branches:', err);
-      // Create a default branch if none exist
+    } catch (error) {
+      setError(getErrorMessage(error));
       setBranches([{ id: 1, name: 'Principal', location: 'Oficina Central', isActive: true, createdAt: '', updatedAt: '' }]);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!canManageRouters()) {
+      navigate('/dashboard/routers');
+      return;
+    }
+    
+    if (id) {
+      fetchRouterDetails();
+      fetchBranches();
+    }
+  }, [id, canManageRouters, navigate, fetchRouterDetails, fetchBranches]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -102,11 +113,8 @@ export const EditRouter: React.FC = () => {
         success: true,
         message: response.data.message || 'Conexión exitosa'
       });
-    } catch (err: any) {
-      setTestResult({
-        success: false,
-        message: err.response?.data?.message || 'Error de conexión'
-      });
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setTesting(false);
     }
@@ -140,8 +148,8 @@ export const EditRouter: React.FC = () => {
       setTimeout(() => {
         navigate(`/dashboard/routers/${id}`);
       }, 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al actualizar router');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setSaving(false);
     }

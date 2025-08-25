@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
@@ -24,8 +24,20 @@ import {
   Settings
 } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
-import { Router, RouterInterface, RouterResource } from '../../../types/router';
+import type { Router, RouterInterface, RouterResource } from '../../../types/router';
 import axios from 'axios';
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.message || error.message || 'Error de conexión';
+  }
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'Error desconocido';
+};
 
 export const RouterDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,42 +51,41 @@ export const RouterDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchRouterDetails();
-      fetchInterfaces();
-      fetchResources();
-    }
-  }, [id]);
-
-  const fetchRouterDetails = async () => {
+  const fetchRouterDetails = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}`);
       setRouter(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al cargar router');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
-  };
+  },[id]);
 
-  const fetchInterfaces = async () => {
+  const fetchInterfaces = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}/interfaces`);
       setInterfaces(response.data);
-    } catch (err: any) {
-      console.error('Error loading interfaces:', err);
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
-  };
+  },[id]);
 
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}/resources`);
       setResources(response.data);
-    } catch (err: any) {
-      console.error('Error loading resources:', err);
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
-  };
+  },[id]);
+
+  
+  useEffect(() => {
+    fetchRouterDetails();
+    fetchInterfaces();
+    fetchResources();
+  }, [fetchRouterDetails, fetchInterfaces, fetchResources]);
 
   const handleTestConnection = async () => {
     if (!router) return;
@@ -83,8 +94,8 @@ export const RouterDetails: React.FC = () => {
     try {
       await axios.post(`/api/routers/${id}/test`);
       await fetchRouterDetails(); // Refresh status
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al probar conexión');
+    } catch (error) {
+      setError(getErrorMessage(error));
     } finally {
       setTesting(false);
     }
@@ -98,8 +109,8 @@ export const RouterDetails: React.FC = () => {
     try {
       await axios.delete(`/api/routers/${id}`);
       navigate('/dashboard/routers');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al eliminar router');
+    } catch (error) {
+      setError(getErrorMessage(error));
     }
   };
 
@@ -142,8 +153,38 @@ export const RouterDetails: React.FC = () => {
   };
 
   const formatUptime = (uptime: string) => {
-    // Assuming uptime comes in format like "1w2d3h4m5s"
-    return uptime;
+    if (!uptime) return 'N/A';
+    
+    // Parse the uptime string like "1w2d3h4m5s"
+    const regex = /(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/;
+    const matches = uptime.match(regex);
+    
+    if (!matches) return uptime;
+    
+    const [, weeks, days, hours, minutes, seconds] = matches;
+    const parts = [];
+    
+    if (weeks && parseInt(weeks) > 0) {
+      parts.push(`${weeks} semana${parseInt(weeks) > 1 ? 's' : ''}`);
+    }
+    if (days && parseInt(days) > 0) {
+      parts.push(`${days} día${parseInt(days) > 1 ? 's' : ''}`);
+    }
+    if (hours && parseInt(hours) > 0) {
+      parts.push(`${hours} hora${parseInt(hours) > 1 ? 's' : ''}`);
+    }
+    if (minutes && parseInt(minutes) > 0) {
+      parts.push(`${minutes} minuto${parseInt(minutes) > 1 ? 's' : ''}`);
+    }
+    if (seconds && parseInt(seconds) > 0 && parts.length === 0) {
+      // Solo mostrar segundos si no hay unidades mayores
+      parts.push(`${seconds} segundo${parseInt(seconds) > 1 ? 's' : ''}`);
+    }
+    
+    if (parts.length === 0) return '0 segundos';
+    
+    // Mostrar máximo 2 partes para que no sea muy largo
+    return parts.slice(0, 2).join(', ');
   };
 
   if (loading) {
@@ -344,7 +385,7 @@ export const RouterDetails: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium">Memoria</p>
                       <p className="text-2xl font-bold">
-                        {Math.round((resources.memoryUsed / resources.memoryTotal) * 100)}%
+                        {resources.memoryTotal > 0 ? Math.round((resources.memoryUsed / resources.memoryTotal) * 100) : 0}%
                       </p>
                       <p className="text-xs text-slate-500">
                         {formatBytes(resources.memoryUsed)} / {formatBytes(resources.memoryTotal)}

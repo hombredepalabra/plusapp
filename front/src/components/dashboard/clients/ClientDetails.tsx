@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
@@ -70,15 +70,7 @@ export const ClientDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      fetchClientDetails();
-      fetchClientSessions();
-      fetchClientStats();
-    }
-  }, [id]);
-
-  const fetchClientDetails = async () => {
+  const fetchClientDetails = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}`);
       setClient(response.data);
@@ -86,18 +78,18 @@ export const ClientDetails: React.FC = () => {
       const error = err as AxiosError<{ message?: string }>;
       setError(error.response?.data?.message || 'Error al cargar cliente');
     }
-  };
+  }, [id]);
 
-  const fetchClientSessions = async () => {
+  const fetchClientSessions = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/sessions`);
       setSessions(response.data);
     } catch (err) {
       console.error('Error loading sessions:', err);
     }
-  };
+  }, [id]);
 
-  const fetchClientStats = async () => {
+  const fetchClientStats = useCallback(async () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/pppoe/clients/${id}/stats`);
       setStats(response.data);
@@ -106,7 +98,15 @@ export const ClientDetails: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchClientDetails();
+      fetchClientSessions();
+      fetchClientStats();
+    }
+  }, [id, fetchClientDetails, fetchClientSessions, fetchClientStats]);
 
   const handleStatusChange = async (action: 'activate' | 'suspend' | 'block' | 'unblock') => {
     if (!client) return;

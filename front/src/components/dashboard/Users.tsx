@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { userService } from '../../services/userService';
 import type { UserData } from '../../types/user';
 import { Card } from '../ui/card';
@@ -13,7 +13,7 @@ export const Users: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
-  const loadUsers = async (page = 1) => {
+  const loadUsers = useCallback(async (page = 1) => {
     try {
       setLoading(true);
       const response = await userService.getUsers(page, 20);
@@ -26,11 +26,11 @@ export const Users: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
