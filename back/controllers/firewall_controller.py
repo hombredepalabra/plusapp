@@ -33,16 +33,16 @@ class FirewallController:
                         if router:
                             SyncService.sync_firewall_rules(router.id)
             
-            # Construir query base
-            query = RouterFirewall.query.filter_by(is_active=True)
-            
+            # Construir consulta base
+            stmt = db.select(RouterFirewall).filter_by(is_active=True)
+
             # Filtrar por router si se especifica
             if router_id:
-                query = query.filter_by(router_id=router_id)
-            
+                stmt = stmt.filter_by(router_id=router_id)
+
             # Paginar resultados
             rules = db.paginate(
-                query,
+                stmt,
                 page=page,
                 per_page=per_page,
                 error_out=False

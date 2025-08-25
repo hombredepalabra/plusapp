@@ -32,10 +32,10 @@ def calculate_uptime(start_time):
         'total_seconds': delta.total_seconds()
     }
 
-def paginate_query(query, page, per_page):
-    """Pagina una query de SQLAlchemy"""
+def paginate_query(stmt, page, per_page):
+    """Pagina una consulta de SQLAlchemy"""
     return db.paginate(
-        query,
+        stmt,
         page=page,
         per_page=per_page,
         error_out=False

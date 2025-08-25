@@ -28,8 +28,9 @@ class PPPoEController:
                     SyncService.sync_router(router.id, 'auto')
         
         # Consultar datos actualizados
+        stmt = db.select(Secret).filter_by(is_active=True)
         clients = db.paginate(
-            Secret.query.filter_by(is_active=True),
+            stmt,
             page=page,
             per_page=per_page,
             error_out=False
