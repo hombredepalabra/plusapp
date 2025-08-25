@@ -30,6 +30,10 @@ interface FirewallRule {
   comment?: string;
   creationDate: string;
   isActive: boolean;
+  protocol?: string;
+  port?: string;
+  action?: string;
+  chain?: string;
 }
 
 interface BlockIPForm {
@@ -436,6 +440,14 @@ export const FirewallManagement: React.FC = () => {
                             <Clock className="h-3 w-3" />
                             <span>{new Date(rule.creationDate).toLocaleDateString('es-ES')}</span>
                           </span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-1 text-xs text-slate-600">
+                          {rule.chain && <Badge variant="outline">{rule.chain}</Badge>}
+                          {rule.action && <Badge variant="outline">{rule.action}</Badge>}
+                          {rule.protocol && (
+                            <Badge variant="outline">{rule.protocol.toUpperCase()}</Badge>
+                          )}
+                          {rule.port && <Badge variant="outline">Puerto {rule.port}</Badge>}
                         </div>
                         {rule.comment && (
                           <p className="text-sm text-slate-600 mt-1">{rule.comment}</p>

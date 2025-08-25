@@ -91,6 +91,10 @@ export interface FirewallRule {
   comment?: string;
   creationDate?: string;
   isActive: boolean;
+  protocol?: string;
+  port?: string;
+  action?: string;
+  chain?: string;
 }
 
 export interface DashboardStats {
