@@ -232,8 +232,13 @@ COMMENT ON COLUMN users.backup_codes IS 'Códigos de respaldo para 2FA (JSON has
 COMMENT ON COLUMN users.failed_login_attempts IS 'Número de intentos de login fallidos';
 COMMENT ON COLUMN users.locked_until IS 'Fecha hasta la cual la cuenta está bloqueada';
 
-INSERT INTO users (username, email, password_hash, role, is_active) VALUES ('Ariels', 'ascastro875@gmail.com', '$2b$12$z7J9zGVkWfY09ih3rJfD7eDfjEcCjCfAZtXvT.yExD8xQuKqP9K7m', 'admin', TRUE);
-    -- Hash de contraseña de ejemplo (password = "toor123")
+-- Usuario Ariels con password = "Ariels875!"
+INSERT INTO users (username, email, password_hash, role, is_active) 
+VALUES ('Ariels', 'ascastro875@gmail.com', '$2b$12$wB6E7TKusZn1cauM6k7Qhe/oZYu1PODJq3oI28sVjC8RjUZrrxLAG', 'admin', TRUE);
+
+-- Usuario Cristian con password = "Cristian1*"
+INSERT INTO users (username, email, password_hash, role, is_active) 
+VALUES ('Cristian', 'cristianherrera01k@gmail.com', '$2b$12$6sOBaJHr0xK15HoTSrhr9OefdyFAdBne0lM4Aq5oz8UqCtwuB5mcu', 'admin', TRUE);
 
 INSERT INTO branches (name, location) VALUES ('Ibarra', 'Azaya'); 
 
