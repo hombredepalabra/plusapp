@@ -65,6 +65,10 @@ class RouterFirewall(db.Model):
     ip_address = db.Column(db.String(20), nullable=False)
     comment = db.Column(db.String(255), nullable=True)
     creation_date = db.Column(db.String(100), nullable=True)
+    protocol = db.Column(db.String(20), nullable=True)
+    port = db.Column(db.String(50), nullable=True)
+    action = db.Column(db.String(20), nullable=True)
+    chain = db.Column(db.String(20), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
