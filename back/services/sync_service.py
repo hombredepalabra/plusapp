@@ -1,6 +1,6 @@
 from datetime import datetime
 from models import db
-from models.router import Router, Secret
+from models.router import Router, Secret, RouterFirewall
 from models.sync_log import SyncLog
 from services.mikrotik_service import MikroTikService
 
@@ -95,6 +95,44 @@ class SyncService:
             })
         
         return results
+
+    @staticmethod
+    def sync_firewall_rules(router_id: int):
+        """Sincroniza las reglas de firewall de un router."""
+        router = Router.query.get(router_id)
+        if not router:
+            return {'success': False, 'message': 'Router no encontrado'}
+
+        # Obtener reglas desde MikroTik
+        rules, error = MikroTikService.get_firewall_rules(router)
+        if error:
+            return {'success': False, 'message': error}
+
+        try:
+            # Limpiar reglas existentes del router
+            RouterFirewall.query.filter_by(router_id=router_id).delete()
+            db.session.commit()
+
+            for rule in rules or []:
+                new_rule = RouterFirewall(
+                    router_id=router_id,
+                    firewall_id=rule.get('.id', ''),
+                    ip_address=rule.get('src-address', ''),
+                    comment=rule.get('comment', ''),
+                    creation_date=rule.get('creation-time'),
+                    protocol=rule.get('protocol'),
+                    port=rule.get('dst-port'),
+                    action=rule.get('action'),
+                    chain=rule.get('chain'),
+                    is_active=rule.get('disabled', 'false') == 'false'
+                )
+                db.session.add(new_rule)
+
+            db.session.commit()
+            return {'success': True, 'message': f'{len(rules or [])} reglas sincronizadas'}
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': str(e)}
     
     @staticmethod
     def get_sync_history(router_id=None, limit=50):

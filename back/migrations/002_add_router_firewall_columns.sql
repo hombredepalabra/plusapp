@@ -1,0 +1,10 @@
+ALTER TABLE router_firewall
+    ADD COLUMN IF NOT EXISTS protocol VARCHAR(20);
+ALTER TABLE router_firewall
+    ADD COLUMN IF NOT EXISTS port VARCHAR(255);
+ALTER TABLE router_firewall
+    ADD COLUMN IF NOT EXISTS action VARCHAR(20);
+ALTER TABLE router_firewall
+    ADD COLUMN IF NOT EXISTS chain VARCHAR(20);
+ALTER TABLE router_firewall
+    ALTER COLUMN port TYPE VARCHAR(255);
