@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
 export const firewallService = {
   async getRules() {
     const response = await axios.get(`${API_BASE_URL}/api/firewall/rules`);
-    return response.data;
+    return response.data.rules || [];
   },
 
   async blockIP(data: { ipAddress: string; comment?: string; routerId: string }) {
