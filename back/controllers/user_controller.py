@@ -160,7 +160,18 @@ class UserController:
         """GET /api/users/profile - Perfil del usuario actual"""
         current_user_id = get_jwt_identity()
         user = User.query.get_or_404(current_user_id)
-        return jsonify(user.to_dict()), 200
+        return jsonify({
+            'id': user.id,
+            'username': user.username,
+            'name': user.username,
+            'email': user.email,
+            'role': user.role,
+            'isActive': user.is_active,
+            'twoFactorEnabled': user.two_factor_enabled,
+            'lastLogin': user.last_login.isoformat() + 'Z' if user.last_login else None,
+            'createdAt': user.created_at.isoformat() + 'Z',
+            'updatedAt': user.updated_at.isoformat() + 'Z'
+        }), 200
     
     @staticmethod
     @jwt_required()

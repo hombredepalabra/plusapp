@@ -58,37 +58,6 @@ class AuthController:
             }), 500
     
     @staticmethod
-    def get_profile():
-        """Endpoint para obtener perfil del usuario"""
-        try:
-            user_id = get_jwt_identity()
-            user = User.query.get(int(user_id))
-            
-            if not user:
-                return jsonify({
-                    'success': False,
-                    'message': 'Usuario no encontrado',
-                    'code': 'USER_NOT_FOUND'
-                }), 404
-            
-            return jsonify({
-                'id': str(user.id),
-                'email': user.email,
-                'name': user.username,
-                'role': user.role,
-                'twoFactorEnabled': user.two_factor_enabled,
-                'createdAt': user.created_at.isoformat() + 'Z',
-                'lastLogin': user.last_login.isoformat() + 'Z' if user.last_login else None
-            }), 200
-            
-        except Exception as e:
-            return jsonify({
-                'success': False,
-                'message': 'Error interno del servidor',
-                'code': 'INTERNAL_ERROR'
-            }), 500
-    
-    @staticmethod
     def setup_2fa():
         """Endpoint para configurar 2FA"""
         try:
