@@ -70,16 +70,8 @@ class AuthController:
                     'message': 'Usuario no encontrado',
                     'code': 'USER_NOT_FOUND'
                 }), 404
-            
-            return jsonify({
-                'id': str(user.id),
-                'email': user.email,
-                'name': user.username,
-                'role': user.role,
-                'twoFactorEnabled': user.two_factor_enabled,
-                'createdAt': user.created_at.isoformat() + 'Z',
-                'lastLogin': user.last_login.isoformat() + 'Z' if user.last_login else None
-            }), 200
+
+            return jsonify(user.to_dict()), 200
             
         except Exception as e:
             return jsonify({

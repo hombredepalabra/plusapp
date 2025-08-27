@@ -28,21 +28,8 @@ class UserController:
             error_out=False
         )
         
-        result = []
-        for user in users.items:
-            user_data = {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'role': user.role,
-                'is_active': user.is_active,
-                'two_factor_enabled': user.two_factor_enabled,
-                'last_login': user.last_login.isoformat() if user.last_login else None,
-                'created_at': user.created_at.isoformat() if user.created_at else None,
-                'updated_at': user.updated_at.isoformat() if user.updated_at else None
-            }
-            result.append(user_data)
-        
+        result = [user.to_dict() for user in users.items]
+
         return success_response({
             'users': result,
             'pagination': {
@@ -102,7 +89,7 @@ class UserController:
             username=data['username'],
             email=data['email'],
             role=data.get('role', 'user'),
-            is_active=data.get('is_active', True)
+            is_active=data.get('isActive', True)
         )
         user.set_password(data['password'])
         
@@ -135,7 +122,7 @@ class UserController:
         user.email = data.get('email', user.email)
         if current_user.role == 'admin':
             user.role = data.get('role', user.role)
-            user.is_active = data.get('is_active', user.is_active)
+            user.is_active = data.get('isActive', user.is_active)
         
         db.session.commit()
         return jsonify({'message': 'Usuario actualizado'}), 200

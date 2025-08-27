@@ -145,21 +145,12 @@ class AuthService:
         
         access_token = create_access_token(identity=str(user.id))
         log_auth_attempt(user=user, event_type='login', success=True, two_factor_used=two_factor_used)
-        
+
         return {
             'success': True,
             'requiresTwoFactor': False,
             'token': access_token,
-            'user': {
-                'id': str(user.id),
-                'email': user.email,
-                'name': user.username,
-                'role': user.role,
-                'twoFactorEnabled': user.two_factor_enabled,
-                'isActive': user.is_active,
-                'createdAt': user.created_at.isoformat() + 'Z',
-                'lastLogin': datetime.utcnow().isoformat() + 'Z'
-            },
+            'user': user.to_dict(),
             'message': 'Login exitoso',
             'status_code': 200
         }

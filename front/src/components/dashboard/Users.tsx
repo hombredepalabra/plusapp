@@ -18,9 +18,9 @@ export const Users: React.FC = () => {
       setLoading(true);
       const response = await userService.getUsers(page, 20);
       setUsers(response.users);
-      setCurrentPage(response.current_page);
-      setTotalPages(response.pages);
-      setTotal(response.total);
+      setCurrentPage(response.pagination.page);
+      setTotalPages(response.pagination.pages);
+      setTotal(response.pagination.total);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -117,34 +117,34 @@ export const Users: React.FC = () => {
                         {user.role}
                       </Badge>
                     </td>
-                    <td className="py-3 px-4">
-                      <Badge variant={user.two_factor_enabled ? "default" : "outline"}>
-                        {user.two_factor_enabled ? 'Habilitado' : 'Deshabilitado'}
+                  <td className="py-3 px-4">
+                      <Badge variant={user.twoFactorEnabled ? "default" : "outline"}>
+                        {user.twoFactorEnabled ? 'Habilitado' : 'Deshabilitado'}
                       </Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant={user.is_active ? "default" : "destructive"}>
-                        {user.is_active ? 'Activo' : 'Inactivo'}
+                  </td>
+                  <td className="py-3 px-4">
+                      <Badge variant={user.isActive ? "default" : "destructive"}>
+                        {user.isActive ? 'Activo' : 'Inactivo'}
                       </Badge>
-                    </td>
-                    <td className="py-3 px-4">
+                  </td>
+                  <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-slate-400" />
                         <span className="text-sm text-slate-500">
-                          {user.last_login 
-                            ? new Date(user.last_login).toLocaleDateString() 
+                          {user.lastLogin
+                            ? new Date(user.lastLogin).toLocaleDateString()
                             : 'Nunca'
                           }
                         </span>
                       </div>
-                    </td>
-                    <td className="py-3 px-4">
+                  </td>
+                  <td className="py-3 px-4">
                       <span className="text-sm text-slate-500">
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {new Date(user.createdAt).toLocaleDateString()}
                       </span>
-                    </td>
-                  </tr>
-                ))}
+                  </td>
+                </tr>
+              ))}
               </tbody>
             </table>
           </div>

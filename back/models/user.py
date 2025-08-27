@@ -179,17 +179,18 @@ class User(BaseModel):
         return permissions.get(permission, False)
     
     def to_dict(self):
-        """Convierte el usuario a diccionario para JSON"""
+        """Convierte el usuario a diccionario para JSON usando camelCase"""
         return {
             'id': self.id,
             'username': self.username,
+            'name': self.username,
             'email': self.email,
             'role': self.role,
-            'two_factor_enabled': self.two_factor_enabled,
-            'is_active': self.is_active,
-            'last_login': self.last_login.isoformat() + 'Z' if self.last_login else None,
-            'created_at': self.created_at.isoformat() + 'Z',
-            'updated_at': self.updated_at.isoformat() + 'Z'
+            'twoFactorEnabled': self.two_factor_enabled,
+            'isActive': self.is_active,
+            'lastLogin': self.last_login.isoformat() + 'Z' if self.last_login else None,
+            'createdAt': self.created_at.isoformat() + 'Z' if self.created_at else None,
+            'updatedAt': self.updated_at.isoformat() + 'Z' if self.updated_at else None
         }
 
 

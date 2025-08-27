@@ -44,17 +44,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.get('/api/users/profile');
       const userData = response.data;
-      console.log('User profile data:', userData);
       const user: User = {
+        ...userData,
         id: userData.id.toString(),
-        username: userData.username,
-        email: userData.email,
-        name: userData.username,
-        twoFactorEnabled: userData.two_factor_enabled,
-        role: userData.role,
-        isActive: userData.is_active,
-        createdAt: userData.created_at,
-        lastLogin: userData.last_login
+        name: userData.name || userData.username
       };
       setUser(user);
     } catch (err) {
@@ -70,20 +63,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/api/auth/login', { email, password });
       const data: LoginResponse = response.data;
-      
+
       if (data.success && !data.requiresTwoFactor && data.token && data.user) {
         const userData = data.user;
-        console.log('User data on login:', userData);
         const user: User = {
+          ...userData,
           id: userData.id.toString(),
-          username: userData.username || userData.name,
-          email: userData.email,
-          name: userData.name,
-          twoFactorEnabled: userData.twoFactorEnabled,
-          role: userData.role,
-          isActive: userData.isActive || true,
-          createdAt: userData.createdAt,
-          lastLogin: userData.lastLogin
+          name: userData.name || userData.username
         };
         setToken(data.token);
         setUser(user);
@@ -108,20 +94,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await axios.post('/api/auth/verify-2fa', { token: tempToken, totpCode });
       const data: AuthResponse = response.data;
-      
+
       if (data.success) {
         const userData = data.user;
-        console.log('User data on 2FA verification:', userData);
         const user: User = {
+          ...userData,
           id: userData.id.toString(),
-          username: userData.username || userData.name,
-          email: userData.email,
-          name: userData.name,
-          twoFactorEnabled: userData.twoFactorEnabled,
-          role: userData.role,
-          isActive: userData.isActive,
-          createdAt: userData.createdAt,
-          lastLogin: userData.lastLogin
+          name: userData.name || userData.username
         };
         setToken(data.token);
         setUser(user);

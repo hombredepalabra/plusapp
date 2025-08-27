@@ -12,7 +12,7 @@ export const userService = {
   },
 
   async getUser(id: number): Promise<UserData> {
-    const response = await axios.get(`${API_BASE_URL}/api/users${id}`);
+    const response = await axios.get(`${API_BASE_URL}/api/users/${id}`);
     return response.data;
   },
 
@@ -21,19 +21,19 @@ export const userService = {
     email: string;
     password: string;
     role?: string;
-    is_active?: boolean;
+    isActive?: boolean;
   }): Promise<{ id: number; message: string }> {
     const response = await axios.post(`${API_BASE_URL}/api/users`, data);
     return response.data;
   },
 
   async updateUser(id: number, data: Partial<UserData>): Promise<{ message: string }> {
-    const response = await axios.put(`${API_BASE_URL}/api/users${id}`, data);
+    const response = await axios.put(`${API_BASE_URL}/api/users/${id}`, data);
     return response.data;
   },
 
   async deleteUser(id: number): Promise<{ message: string }> {
-    const response = await axios.delete(`${API_BASE_URL}/api/users${id}`);
+    const response = await axios.delete(`${API_BASE_URL}/api/users/${id}`);
     return response.data;
   }
 };

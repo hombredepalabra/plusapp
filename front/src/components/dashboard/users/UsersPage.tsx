@@ -5,12 +5,12 @@ import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
 import { Alert, AlertDescription } from '../../ui/alert';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Users, 
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Users,
   Shield,
   Mail,
   Calendar,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
 import axios from 'axios';
+import type { UserData } from '../../../types/user';
 
 const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
@@ -32,22 +33,10 @@ const getErrorMessage = (error: unknown): string => {
   return 'Error desconocido';
 };
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  is_active: boolean;
-  two_factor_enabled: boolean;
-  last_login: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export const UsersPage: React.FC = () => {
   const { canManageUsers } = usePermissions();
-  
-  const [users, setUsers] = useState<User[]>([]);
+
+  const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -198,12 +187,12 @@ export const UsersPage: React.FC = () => {
                       <div className="text-right space-y-1">
                         <div className="flex items-center space-x-2">
                           {getRoleBadge(user.role)}
-                          {user.is_active ? (
+                          {user.isActive ? (
                             <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Activo</Badge>
                           ) : (
                             <Badge variant="secondary">Inactivo</Badge>
                           )}
-                          {user.two_factor_enabled && (
+                          {user.twoFactorEnabled && (
                             <Badge variant="outline" className="flex items-center space-x-1">
                               <Shield className="h-3 w-3" />
                               <span>2FA</span>
@@ -213,8 +202,8 @@ export const UsersPage: React.FC = () => {
                         <div className="flex items-center space-x-1 text-xs text-slate-500">
                           <Calendar className="h-3 w-3" />
                           <span>
-                            {user.last_login 
-                              ? `Último acceso: ${new Date(user.last_login).toLocaleDateString('es-ES')}`
+                            {user.lastLogin
+                              ? `Último acceso: ${new Date(user.lastLogin).toLocaleDateString('es-ES')}`
                               : 'Nunca ha iniciado sesión'
                             }
                           </span>

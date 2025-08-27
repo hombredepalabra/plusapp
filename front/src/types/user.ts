@@ -1,18 +1,23 @@
 export interface UserData {
   id: number;
   username: string;
+  name?: string;
   email: string;
   role: string;
-  two_factor_enabled: boolean;
-  is_active: boolean;
-  last_login: string | null;
-  created_at: string;
-  updated_at: string;
+  twoFactorEnabled: boolean;
+  isActive: boolean;
+  lastLogin: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UsersResponse {
+  success: boolean;
   users: UserData[];
-  total: number;
-  pages: number;
-  current_page: number;
+  pagination: {
+    page: number;
+    per_page: number;
+    total: number;
+    pages: number;
+  };
 }
