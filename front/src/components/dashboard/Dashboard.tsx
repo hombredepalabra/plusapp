@@ -9,7 +9,7 @@ import { RouterManagement } from './routers/RouterManagement';
 import { ClientManagement } from './clients/ClientManagement';
 import { SessionManagement } from '../sessions/SessionManagement';
 import { FirewallManagement } from './firewall/FirewallManagement';
-import { UsersPage } from './users/UsersPage';
+import { UserManagement } from './users/UserManagement';
 import { SyncPage } from './sync/SyncPage';
 import { BranchesPage } from './branches/BranchesPage';
 
@@ -26,7 +26,7 @@ export const Dashboard: React.FC = () => {
             <Route path="clients/*" element={<ClientManagement />} />
             <Route path="sessions/*" element={<SessionManagement />} />
             <Route path="firewall/*" element={<FirewallManagement />} />
-            <Route path="users/*" element={<UsersPage />} />
+            <Route path="users/*" element={<UserManagement />} />
             <Route path="sync/*" element={<SyncPage />} />
             <Route path="branches/*" element={<BranchesPage />} />
             <Route path="profile" element={<ProfileSettings />} />
