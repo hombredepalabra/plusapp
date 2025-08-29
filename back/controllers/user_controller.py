@@ -3,9 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db
 from models.user import User, SecurityEvent
 from utils.decorators import require_role, handle_errors
-from utils.validators import validate_email, validate_password
+from utils.validators import validate_email, validate_password, validate_required_fields
 from utils.response import success_response, error_response
-from utils.validation import validate_required_fields
 
 class UserController:
     @staticmethod
