@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -22,10 +22,10 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { TwoFactorSetup } from '../../types/auth';
+import type { TwoFactorSetup } from '../../types/auth';
 
 export const TwoFactorSettings: React.FC = () => {
-  const { user, setupTwoFactor, enableTwoFactor, disableTwoFactor, isLoading } = useAuth();
+  const { user, enableTwoFactor, disableTwoFactor, isLoading } = useAuth();
   
   // Estados para configuración 2FA
   const [setupData, setSetupData] = useState<TwoFactorSetup | null>(null);
@@ -37,11 +37,20 @@ export const TwoFactorSettings: React.FC = () => {
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [disableCode, setDisableCode] = useState('');
   const [showSecret, setShowSecret] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
 
   // Iniciar configuración 2FA
   const handleStartSetup = async (): Promise<void> => {
+    setLocalLoading(true);
     try {
-      const data = await setupTwoFactor();
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || ''}/api/auth/setup-2fa`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
       setSetupData(data);
       
       // Generar QR code
@@ -52,6 +61,8 @@ export const TwoFactorSettings: React.FC = () => {
       toast.success('Configuración 2FA iniciada');
     } catch (err: any) {
       toast.error(`Error al iniciar configuración: ${err.message}`);
+    } finally {
+      setLocalLoading(false);
     }
   };
 
@@ -164,10 +175,10 @@ export const TwoFactorSettings: React.FC = () => {
             {!user?.twoFactorEnabled ? (
               <Button 
                 onClick={handleStartSetup} 
-                disabled={isLoading}
+                disabled={localLoading}
                 className="bg-slate-900 hover:bg-slate-800"
               >
-                {isLoading ? (
+                {localLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Configurando...
