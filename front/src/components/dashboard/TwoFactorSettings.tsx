@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
@@ -22,7 +22,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import { TwoFactorSetup } from '../../types/auth';
+import type { TwoFactorSetup } from '../../types/auth';
 
 export const TwoFactorSettings: React.FC = () => {
   const { user, setupTwoFactor, enableTwoFactor, disableTwoFactor, isLoading } = useAuth();
@@ -63,7 +63,7 @@ export const TwoFactorSettings: React.FC = () => {
     }
 
     try {
-      const response = await enableTwoFactor(totpCode);
+      const response = await enableTwoFactor(totpCode.trim());
       if (response.success) {
         setRecoveryCodes(response.recoveryCodes);
         setShowRecoveryCodes(true);
@@ -84,7 +84,7 @@ export const TwoFactorSettings: React.FC = () => {
     }
 
     try {
-      const response = await disableTwoFactor(disableCode);
+      const response = await disableTwoFactor(disableCode.trim());
       if (response.success) {
         setShowDisableDialog(false);
         setDisableCode('');
