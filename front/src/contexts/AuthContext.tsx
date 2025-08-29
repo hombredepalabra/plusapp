@@ -11,11 +11,12 @@ import type {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
 
-
-// Configurar axios
-axios.defaults.baseURL = API_BASE_URL;
+// Instancia de axios para todas las peticiones del frontend
+const api = axios.create({
+  baseURL: API_BASE_URL,
+});
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -32,7 +33,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const savedToken = localStorage.getItem('authToken');
     if (savedToken) {
       setToken(savedToken);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
       // Obtener perfil del usuario
       fetchUserProfile().finally(() => setIsLoading(false));
     } else {
@@ -42,7 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUserProfile = async (): Promise<void> => {
     try {
-      const response = await axios.get('/api/users/profile');
+      const response = await api.get('/api/users/profile');
       const userData = response.data;
       console.log('User profile data:', userData);
       const user: User = {
@@ -68,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', { email, password });
       const data: LoginResponse = response.data;
       
       if (data.success && !data.requiresTwoFactor && data.token && data.user) {
@@ -88,7 +89,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(data.token);
         setUser(user);
         localStorage.setItem('authToken', data.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       }
       
       return data;
@@ -106,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/verify-2fa', { token: tempToken, totpCode });
+      const response = await api.post('/api/auth/verify-2fa', { token: tempToken, totpCode });
       const data: AuthResponse = response.data;
       
       if (data.success) {
@@ -126,7 +127,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(data.token);
         setUser(user);
         localStorage.setItem('authToken', data.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       }
       
       return data;
@@ -144,7 +145,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setToken(null);
     setError(null);
     localStorage.removeItem('authToken');
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
   };
 
   const setupTwoFactor = async (): Promise<TwoFactorSetup> => {
@@ -152,7 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/setup-2fa');
+      const response = await api.post('/api/auth/setup-2fa');
       return response.data;
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al configurar 2FA';
@@ -168,7 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/enable-2fa', { totpCode });
+      const response = await api.post('/api/auth/enable-2fa', { totpCode });
       if (response.data.success) {
         // Actualizar usuario
         setUser(prev => prev ? { ...prev, twoFactorEnabled: true } : null);
@@ -188,7 +189,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/disable-2fa', { totpCode });
+      const response = await api.post('/api/auth/disable-2fa', { totpCode });
       if (response.data.success) {
         setUser(prev => prev ? { ...prev, twoFactorEnabled: false } : null);
       }
@@ -207,7 +208,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/forgot-password', { email });
+      const response = await api.post('/api/auth/forgot-password', { email });
       return response.data;
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al enviar email de recuperación';
@@ -223,7 +224,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/reset-password', { token, newPassword });
+      const response = await api.post('/api/auth/reset-password', { token, newPassword });
       return response.data;
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al restablecer contraseña';
@@ -239,7 +240,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
     
     try {
-      const response = await axios.post('/api/auth/change-password', { currentPassword, newPassword });
+      const response = await api.post('/api/auth/change-password', { currentPassword, newPassword });
       return response.data;
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Error al cambiar contraseña';
