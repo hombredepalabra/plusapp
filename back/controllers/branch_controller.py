@@ -210,8 +210,10 @@ class BranchController:
 
             db.session.delete(branch)
             db.session.commit()
+
             return success_response({"message": "Branch deleted successfully"})
 
         except Exception as e:
             db.session.rollback()
             return error_response(f"Error deleting branch: {str(e)}", 500)
+

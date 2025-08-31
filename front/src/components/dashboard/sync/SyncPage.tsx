@@ -86,19 +86,6 @@ export const SyncPage: React.FC = () => {
     }
   };
 
-  const handleSyncRouter = async (routerId: number) => {
-    setSyncing(true);
-    try {
-      await axios.post(`/api/sync/manual/${routerId}`);
-      await fetchSyncStatus();
-      await fetchSyncLogs();
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Error al sincronizar router');
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'success':

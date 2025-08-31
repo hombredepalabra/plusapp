@@ -18,34 +18,24 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { usePermissions } from '../../../hooks/usePermissions';
-import axios from 'axios';
+import { branchService } from '../../../services/branchService';
+import type { BranchData } from '../../../types/branch';
 
 const getErrorMessage = (error: unknown): string => {
-  if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || error.message || 'Error de conexión';
+  if (error && typeof error === 'object' && 'response' in error) {
+    const err = error as any;
+    return err.response?.data?.error || err.message || 'Error de conexión';
   }
-  
   if (error instanceof Error) {
     return error.message;
   }
-  
   return 'Error desconocido';
 };
-
-interface Branch {
-  id: number;
-  name: string;
-  location: string | null;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  routers_count: number;
-}
 
 export const BranchesPage: React.FC = () => {
   const { canManageUsers } = usePermissions();
   
-  const [branches, setBranches] = useState<Branch[]>([]);
+  const [branches, setBranches] = useState<BranchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -88,8 +78,8 @@ export const BranchesPage: React.FC = () => {
     }
 
     try {
-      await axios.delete(`/api/branches/${branchId}`);
-      fetchBranches(); // Refresh list
+      await branchService.deleteBranch(branchId);
+      fetchBranches();
     } catch (error) {
       setError(getErrorMessage(error));
     }
@@ -203,7 +193,7 @@ export const BranchesPage: React.FC = () => {
                             <Edit className="h-3 w-3" />
                           </Link>
                         </Button>
-                        <Button
+                          <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleDelete(branch.id)}
@@ -221,11 +211,11 @@ export const BranchesPage: React.FC = () => {
                         <span>{branch.location}</span>
                       </div>
                     )}
-                    
+
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 text-sm text-slate-600">
                         <Router className="h-4 w-4" />
-                        <span>{branch.routers_count} routers</span>
+                        <span>{branch.routers_count ?? 0} routers</span>
                       </div>
                       {branch.is_active ? (
                         <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Activa</Badge>
@@ -233,12 +223,12 @@ export const BranchesPage: React.FC = () => {
                         <Badge variant="secondary">Inactiva</Badge>
                       )}
                     </div>
-                    
+
                     <div className="flex items-center space-x-1 text-xs text-slate-500">
                       <Calendar className="h-3 w-3" />
                       <span>Creada: {new Date(branch.created_at).toLocaleDateString('es-ES')}</span>
                     </div>
-                    
+
                     <div className="pt-2">
                       <Button asChild variant="outline" className="w-full" size="sm">
                         <Link to={`/dashboard/branches/${branch.id}`}>
