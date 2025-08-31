@@ -26,7 +26,7 @@ export const EditRouter: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { canManageRouters } = usePermissions();
-  
+  const hasRouterPermission = canManageRouters()
   const [router, setRouter] = useState<Router | null>(null);
   const [formData, setFormData] = useState<UpdateRouterRequest>({});
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -73,7 +73,8 @@ export const EditRouter: React.FC = () => {
   const fetchBranches = useCallback(async () => {
     try {
       const response = await axios.get('/api/branches');
-      setBranches(response.data);
+      const data = response.data?.branches || [];
+      setBranches(data);
     } catch (error) {
       setError(getErrorMessage(error));
       setBranches([{ id: 1, name: 'Principal', location: 'Oficina Central', isActive: true, createdAt: '', updatedAt: '' }]);
@@ -81,7 +82,7 @@ export const EditRouter: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!canManageRouters()) {
+    if (!hasRouterPermission) {
       navigate('/dashboard/routers');
       return;
     }
@@ -90,7 +91,7 @@ export const EditRouter: React.FC = () => {
       fetchRouterDetails();
       fetchBranches();
     }
-  }, [id, canManageRouters, navigate, fetchRouterDetails, fetchBranches]);
+  }, [id, hasRouterPermission, navigate, fetchRouterDetails, fetchBranches]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;

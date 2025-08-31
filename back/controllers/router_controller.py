@@ -157,3 +157,35 @@ class RouterController:
             'status': status,
             'last_check': router.updated_at.isoformat() if router.updated_at else None
         }), 200
+
+    @staticmethod
+    @jwt_required()
+    def get_interfaces(router_id):
+        """GET /api/routers/{id}/interfaces - List router interfaces"""
+        router = Router.query.get_or_404(router_id)
+        decrypted_password = EncryptionService.decrypt_password(router.password)
+        temp_router = type('obj', (object,), {
+            'uri': router.uri,
+            'username': router.username,
+            'password': decrypted_password
+        })
+        data, error = MikroTikService.get_interfaces(temp_router)
+        if error:
+            return jsonify({'error': error}), 500
+        return jsonify(data), 200
+
+    @staticmethod
+    @jwt_required()
+    def get_resources(router_id):
+        """GET /api/routers/{id}/resources - Router resource usage"""
+        router = Router.query.get_or_404(router_id)
+        decrypted_password = EncryptionService.decrypt_password(router.password)
+        temp_router = type('obj', (object,), {
+            'uri': router.uri,
+            'username': router.username,
+            'password': decrypted_password
+        })
+        data, error = MikroTikService.get_router_resources(temp_router)
+        if error:
+            return jsonify({'error': error}), 500
+        return jsonify(data), 200

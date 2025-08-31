@@ -25,6 +25,7 @@ const getErrorMessage = (error: unknown): string => {
 export const CreateRouter: React.FC = () => {
   const navigate = useNavigate();
   const { canManageRouters } = usePermissions();
+  const hasRouterPermission = canManageRouters();
   const [formData, setFormData] = useState<CreateRouterRequest>({
     name: '',
     uri: '',
@@ -40,19 +41,20 @@ export const CreateRouter: React.FC = () => {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    if (!canManageRouters()) {
+    if (!hasRouterPermission) {
       navigate('/dashboard/routers');
       return;
     }
     fetchBranches();
-  }, [canManageRouters, navigate]);
+  }, [navigate, hasRouterPermission]);
 
   const fetchBranches = async () => {
     try {
       const response = await axios.get('/api/branches');
-      setBranches(response.data);
-      if (response.data.length > 0) {
-        setFormData(prev => ({ ...prev, branchId: response.data[0].id }));
+       const data = response.data?.branches || [];
+      setBranches(data);
+      if (data.length > 0) {
+        setFormData(prev => ({ ...prev, branchId: data[0].id }));
       }
     } catch (error) {
       setError(getErrorMessage(error));

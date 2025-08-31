@@ -74,6 +74,18 @@ class MikroTikService:
         """Return active PPPoE sessions."""
 
         return MikroTikService._request(router, "ppp/active")
+    
+    @staticmethod
+    def get_interfaces(router: Router) -> Tuple[Optional[Any], Optional[str]]:
+        """Return network interfaces of the router."""
+
+        return MikroTikService._request(router, "interface")
+
+    @staticmethod
+    def get_router_resources(router: Router) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """Return resource information (CPU, memory, etc.) of the router."""
+
+        return MikroTikService._request(router, "system/resource")
 
     @staticmethod
     def get_router_info(router: Router) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:

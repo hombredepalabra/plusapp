@@ -54,3 +54,17 @@ def test_connection(router_id: int):
 def get_status(router_id: int):
     """GET /api/routers/{id}/status - Get router status"""
     return RouterController.get_status(router_id)
+
+@router_bp.route('/<int:router_id>/interfaces', methods=['GET'])
+@require_auth
+@handle_errors
+def get_interfaces(router_id: int):
+    """GET /api/routers/{id}/interfaces - Get router interfaces"""
+    return RouterController.get_interfaces(router_id)
+
+@router_bp.route('/<int:router_id>/resources', methods=['GET'])
+@require_auth
+@handle_errors
+def get_resources(router_id: int):
+    """GET /api/routers/{id}/resources - Get router resources"""
+    return RouterController.get_resources(router_id)

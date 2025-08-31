@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 export type Permission = 
@@ -53,60 +54,67 @@ const rolePermissions: Record<string, Permission[]> = {
 export const usePermissions = () => {
   const { user } = useAuth();
 
-  const hasPermission = (permission: Permission): boolean => {
+  const hasPermission = useCallback((permission: Permission): boolean => {
     if (!user) return false;
     
     const userRole = user.role || 'guest';
     const permissions = rolePermissions[userRole] || [];
     
     return permissions.includes(permission);
-  };
+  }, [user]);
 
-  const hasAnyPermission = (permissions: Permission[]): boolean => {
-    return permissions.some(permission => hasPermission(permission));
-  };
+  const hasAnyPermission = useCallback(
+    (permissions: Permission[]): boolean =>
+      permissions.some(permission => hasPermission(permission)),
+    [hasPermission]
+  );
 
-  const hasAllPermissions = (permissions: Permission[]): boolean => {
-    return permissions.every(permission => hasPermission(permission));
-  };
+  const hasAllPermissions = useCallback(
+    (permissions: Permission[]): boolean =>
+      permissions.every(permission => hasPermission(permission)),
+    [hasPermission]
+  );
 
-  const canManageUsers = (): boolean => {
-    return hasAnyPermission(['users.create', 'users.update', 'users.delete']);
-  };
+  const canManageUsers = useCallback(
+    (): boolean =>
+      hasAnyPermission(['users.create', 'users.update', 'users.delete']),
+    [hasAnyPermission]
+  );
 
-  const canManageRouters = (): boolean => {
-    return hasAnyPermission(['routers.create', 'routers.update', 'routers.delete']);
-  };
+  const canManageRouters = useCallback(
+    (): boolean =>
+      hasAnyPermission(['routers.create', 'routers.update', 'routers.delete']),
+    [hasAnyPermission]
+  );
 
-  const canManageClients = (): boolean => {
-    return hasAnyPermission(['pppoe.create', 'pppoe.update', 'pppoe.delete']);
-  };
+  const canManageClients = useCallback(
+    (): boolean =>
+      hasAnyPermission(['pppoe.create', 'pppoe.update', 'pppoe.delete']),
+    [hasAnyPermission]
+  );
 
-  const canControlClients = (): boolean => {
-    return hasPermission('pppoe.control');
-  };
+  const canControlClients = useCallback(
+    (): boolean => hasPermission('pppoe.control'),
+    [hasPermission]
+  );
 
-  const canManageFirewall = (): boolean => {
-    return hasAnyPermission(['firewall.create', 'firewall.delete']);
-  };
+  const canManageFirewall = useCallback(
+    (): boolean => hasAnyPermission(['firewall.create', 'firewall.delete']),
+    [hasAnyPermission]
+  );
 
-  const canSync = (): boolean => {
-    return hasPermission('sync.execute');
-  };
+  const canSync = useCallback(
+    (): boolean => hasPermission('sync.execute'),
+    [hasPermission]
+  );
 
-  const isAdmin = (): boolean => {
-    return user?.role === 'admin';
-  };
+  const isAdmin = useCallback((): boolean => user?.role === 'admin', [user]);
 
-  const isManager = (): boolean => {
-    return user?.role === 'manager';
-  };
+  const isManager = useCallback((): boolean => user?.role === 'manager', [user]);
 
-  const getUserRole = (): string => {
-    return user?.role || 'guest';
-  };
+  const getUserRole = useCallback((): string => user?.role || 'guest', [user]);
 
-  const getRoleDisplayName = (role?: string): string => {
+  const getRoleDisplayName = useCallback((role?: string): string => {
     const roleNames: Record<string, string> = {
       admin: 'Administrador',
       manager: 'Gerente',
@@ -117,7 +125,7 @@ export const usePermissions = () => {
     };
     
     return roleNames[role || 'guest'] || 'Desconocido';
-  };
+  }, []);
 
   return {
     hasPermission,
