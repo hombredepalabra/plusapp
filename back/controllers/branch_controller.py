@@ -9,16 +9,23 @@ class BranchController:
     
     @staticmethod
     def get_branches():
-        """Get all branches"""
+        """Get branches with optional active/inactive filter"""
         try:
             page = request.args.get('page', 1, type=int)
             per_page = request.args.get('per_page', 50, type=int)
-            
+            status = request.args.get('status', 'active')
+
             # Limit per_page to prevent abuse
             per_page = min(per_page, 100)
-            
+
+            query = Branch.query
+            if status == 'active':
+                query = query.filter_by(is_active=True)
+            elif status == 'inactive':
+                query = query.filter_by(is_active=False)
+
             branches = db.paginate(
-                Branch.query.filter_by(is_active=True),
+                query,
                 page=page,
                 per_page=per_page,
                 error_out=False
@@ -54,7 +61,7 @@ class BranchController:
     def get_branch(branch_id):
         """Get specific branch by ID"""
         try:
-            branch = Branch.query.filter_by(id=branch_id, is_active=True).first()
+            branch = Branch.query.get(branch_id)
             if not branch:
                 return error_response("Branch not found", 404)
             
@@ -137,7 +144,7 @@ class BranchController:
     def update_branch(branch_id):
         """Update existing branch (admin only)"""
         try:
-            branch = Branch.query.filter_by(id=branch_id, is_active=True).first()
+            branch = Branch.query.get(branch_id)
             if not branch:
                 return error_response("Branch not found", 404)
             
@@ -184,23 +191,27 @@ class BranchController:
     @staticmethod
     @jwt_required()
     def delete_branch(branch_id):
-        """Delete branch (admin only) - soft delete"""
+        """Delete branch. Active branches are deactivated first; inactive branches are removed"""
         try:
-            branch = Branch.query.filter_by(id=branch_id, is_active=True).first()
+            branch = Branch.query.get(branch_id)
             if not branch:
                 return error_response("Branch not found", 404)
-            
-            # Check if branch has active routers
-            active_routers_count = branch.routers.filter_by(is_active=True).count()
-            if active_routers_count > 0:
-                return error_response(f"Cannot delete branch with {active_routers_count} active routers", 400)
-            
-            # Soft delete
-            branch.is_active = False
+
+            routers_count = branch.routers.count()
+            if routers_count > 0:
+                return error_response(
+                    f"Cannot delete branch with {routers_count} routers", 400
+                )
+
+            if branch.is_active:
+                branch.is_active = False
+                db.session.commit()
+                return success_response({"message": "Branch deactivated successfully"})
+
+            db.session.delete(branch)
             db.session.commit()
-            
             return success_response({"message": "Branch deleted successfully"})
-            
+
         except Exception as e:
             db.session.rollback()
             return error_response(f"Error deleting branch: {str(e)}", 500)

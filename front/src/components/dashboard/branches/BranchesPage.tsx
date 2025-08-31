@@ -5,6 +5,7 @@ import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
 import { Alert, AlertDescription } from '../../ui/alert';
+import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
 import { 
   Plus, 
   Search, 
@@ -50,10 +51,11 @@ export const BranchesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
 
   const fetchBranches = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/branches?page=${currentPage}&per_page=20`);
+      const response = await axios.get(`/api/branches?page=${currentPage}&per_page=20&status=${status}`);
       if (response.data.success) {
         setBranches(response.data.branches);
         setTotalPages(response.data.pagination.pages);
@@ -63,7 +65,7 @@ export const BranchesPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, status]);
 
   useEffect(() => {
     fetchBranches();
@@ -72,11 +74,16 @@ export const BranchesPage: React.FC = () => {
   const handleDelete = async (branchId: number) => {
     const branch = branches.find(b => b.id === branchId);
     if (branch && branch.routers_count > 0) {
-      setError(`No se puede eliminar la sucursal "${branch.name}" porque tiene ${branch.routers_count} routers asignados`);
+      setError(`No se puede eliminar la sucursal "${branch.name}" porque tiene ${branch.routers_count} routers asignados. Primero reasigna los routers a otra sucursal.`);
       return;
     }
 
-    if (!window.confirm('¿Estás seguro de que quieres eliminar esta sucursal?')) {
+    const confirmMessage =
+      status === 'active'
+        ? '¿Estás seguro de que quieres desactivar esta sucursal?'
+        : '¿Estás seguro de que quieres eliminar permanentemente esta sucursal?';
+
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -154,6 +161,19 @@ export const BranchesPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Tabs
+            value={status}
+            onValueChange={(val) => {
+              setStatus(val as 'active' | 'inactive');
+              setCurrentPage(1);
+            }}
+            className="mb-6"
+          >
+            <TabsList>
+              <TabsTrigger value="active">Activas</TabsTrigger>
+              <TabsTrigger value="inactive">Inactivas</TabsTrigger>
+            </TabsList>
+          </Tabs>
           <div className="flex items-center space-x-2 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
@@ -183,12 +203,11 @@ export const BranchesPage: React.FC = () => {
                             <Edit className="h-3 w-3" />
                           </Link>
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDelete(branch.id)}
                           className="text-red-600 hover:text-red-800"
-                          disabled={branch.routers_count > 0}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
