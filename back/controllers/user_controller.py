@@ -16,12 +16,19 @@ class UserController:
         
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
+        status = request.args.get('status', 'active')
         
         # Limit per_page to prevent abuse
         per_page = min(per_page, 100)
         
+        query = User.query
+        if status == 'active':
+            query = query.filter_by(is_active=True)
+        elif status == 'inactive':
+            query = query.filter_by(is_active=False)
+
         users = db.paginate(
-            User.query,
+            query,
             page=page,
             per_page=per_page,
             error_out=False

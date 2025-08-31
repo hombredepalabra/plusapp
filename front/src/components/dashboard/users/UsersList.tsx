@@ -5,6 +5,7 @@ import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { Input } from '../../ui/input';
 import { Alert, AlertDescription } from '../../ui/alert';
+import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
 import { 
   Plus, 
   Search, 
@@ -53,10 +54,11 @@ export const UsersList: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
   
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/users?page=${currentPage}&per_page=20`);
+      const response = await axios.get(`/api/users?page=${currentPage}&per_page=20&status=${status}`);
       if (response.data.success) {
         setUsers(response.data.users);
         setTotalPages(response.data.pagination.pages);
@@ -66,7 +68,7 @@ export const UsersList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage]);
+  }, [currentPage, status]);
 
   useEffect(() => {
     fetchUsers();
@@ -163,6 +165,19 @@ export const UsersList: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Tabs
+            value={status}
+            onValueChange={(val) => {
+              setStatus(val as 'active' | 'inactive');
+              setCurrentPage(1);
+            }}
+            className="mb-6"
+          >
+            <TabsList>
+              <TabsTrigger value="active">Activos</TabsTrigger>
+              <TabsTrigger value="inactive">Inactivos</TabsTrigger>
+            </TabsList>
+          </Tabs>
           <div className="flex items-center space-x-2 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
