@@ -184,23 +184,24 @@ class BranchController:
     @staticmethod
     @jwt_required()
     def delete_branch(branch_id):
-        """Delete branch (admin only) - soft delete"""
+        """Permanently delete branch (admin only)"""
         try:
-            branch = Branch.query.filter_by(id=branch_id, is_active=True).first()
+            branch = Branch.query.get(branch_id)
             if not branch:
                 return error_response("Branch not found", 404)
-            
-            # Check if branch has active routers
-            active_routers_count = branch.routers.filter_by(is_active=True).count()
-            if active_routers_count > 0:
-                return error_response(f"Cannot delete branch with {active_routers_count} active routers", 400)
-            
-            # Soft delete
-            branch.is_active = False
+
+            # Ensure no routers are associated with this branch
+            if branch.routers.count() > 0:
+                return error_response(
+                    "Cannot delete branch with active routers", 400
+                )
+
+            db.session.delete(branch)
             db.session.commit()
-            
+
             return success_response({"message": "Branch deleted successfully"})
-            
+
         except Exception as e:
             db.session.rollback()
             return error_response(f"Error deleting branch: {str(e)}", 500)
+
