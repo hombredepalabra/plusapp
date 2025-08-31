@@ -110,7 +110,13 @@ export const CreateRouter: React.FC = () => {
     setSuccess(null);
 
     try {
-      await axios.post('/api/routers', formData);
+      await axios.post('/api/routers', {
+        name: formData.name,
+        uri: formData.uri,
+        username: formData.username,
+        password: formData.password,
+        branch_id: formData.branchId
+      });
       setSuccess('Router creado exitosamente');
       setTimeout(() => {
         navigate('/dashboard/routers');

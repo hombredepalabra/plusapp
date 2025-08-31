@@ -234,11 +234,11 @@ COMMENT ON COLUMN users.locked_until IS 'Fecha hasta la cual la cuenta está blo
 
 -- Usuario Ariels con password = "Ariels875!"
 INSERT INTO users (username, email, password_hash, role, is_active) 
-VALUES ('Ariels', 'ascastro875@gmail.com', '$2b$12$wB6E7TKusZn1cauM6k7Qhe/oZYu1PODJq3oI28sVjC8RjUZrrxLAG', 'admin', TRUE);
+VALUES ('Ariels', 'ascastro875@gmail.com', '$2a$12$tQD2ORNd1M0X5vVtjTju.ewu4gd7t/USm8gLn1/y/p4R.asQmUBw6', 'admin', TRUE);
 
 -- Usuario Cristian con password = "Cristian1*"
 INSERT INTO users (username, email, password_hash, role, is_active) 
-VALUES ('Cristian', 'cristianherrera01k@gmail.com', '$2b$12$6sOBaJHr0xK15HoTSrhr9OefdyFAdBne0lM4Aq5oz8UqCtwuB5mcu', 'admin', TRUE);
+VALUES ('Cristian', 'cristianherrera01k@gmail.com', '$2a$12$RucgUMf13BMLKvhq3w3jJe86mF5VnhPlmGKNSAuO3eGXzmTLArm0a', 'admin', TRUE);
 
 INSERT INTO branches (name, location) VALUES ('Ibarra', 'Azaya'); 
 

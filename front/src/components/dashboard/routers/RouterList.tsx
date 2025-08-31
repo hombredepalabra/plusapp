@@ -54,7 +54,19 @@ export const RouterList: React.FC = () => {
       if (filters.status) params.append('status', filters.status);
 
       const response = await axios.get(`/api/routers?${params.toString()}`);
-      setRouters(response.data);
+      const mappedRouters: Router[] = response.data.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        uri: r.uri,
+        username: r.username,
+        branchId: r.branch_id,
+        branch: r.branch,
+        isActive: r.is_active,
+        status: r.status,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+      setRouters(mappedRouters);
       setError(null);
     } catch (error) {
       setError(getErrorMessage(error));

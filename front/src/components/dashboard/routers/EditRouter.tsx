@@ -40,15 +40,28 @@ export const EditRouter: React.FC = () => {
   const fetchRouterDetails = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}`);
-      const routerData = response.data;
-      setRouter(routerData);
+      const r = response.data;
+      const mappedRouter: Router = {
+        id: r.id,
+        name: r.name,
+        uri: r.uri,
+        username: r.username,
+        password: '',
+        branchId: r.branch_id,
+        branch: r.branch,
+        isActive: r.is_active,
+        status: r.status,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      };
+      setRouter(mappedRouter);
       setFormData({
-        name: routerData.name,
-        uri: routerData.uri,
-        username: routerData.username,
+        name: mappedRouter.name,
+        uri: mappedRouter.uri,
+        username: mappedRouter.username,
         password: '', // Don't pre-fill password for security
-        branchId: routerData.branchId,
-        isActive: routerData.isActive
+        branchId: mappedRouter.branchId,
+        isActive: mappedRouter.isActive
       });
     } catch (error) {
       setError(getErrorMessage(error));
@@ -134,13 +147,13 @@ export const EditRouter: React.FC = () => {
 
     try {
       // Only send fields that have values (don't send empty password)
-      const updateData: UpdateRouterRequest = {};
+      const updateData: any = {};
       if (formData.name !== router?.name) updateData.name = formData.name;
       if (formData.uri !== router?.uri) updateData.uri = formData.uri;
       if (formData.username !== router?.username) updateData.username = formData.username;
       if (formData.password) updateData.password = formData.password; // Only update if new password provided
-      if (formData.branchId !== router?.branchId) updateData.branchId = formData.branchId;
-      if (formData.isActive !== router?.isActive) updateData.isActive = formData.isActive;
+      if (formData.branchId !== router?.branchId) updateData.branch_id = formData.branchId;
+      if (formData.isActive !== router?.isActive) updateData.is_active = formData.isActive;
 
       await axios.put(`/api/routers/${id}`, updateData);
       setSuccess('Router actualizado exitosamente');

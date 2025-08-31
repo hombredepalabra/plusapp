@@ -16,6 +16,7 @@ class RouterController:
             'id': r.id,
             'name': r.name,
             'uri': r.uri,
+            'username': r.username,
             'branch_id': r.branch_id,
             'is_active': r.is_active,
             'created_at': r.created_at.isoformat() if r.created_at else None

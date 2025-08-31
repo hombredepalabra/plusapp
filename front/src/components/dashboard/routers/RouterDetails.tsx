@@ -54,7 +54,21 @@ export const RouterDetails: React.FC = () => {
   const fetchRouterDetails = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}`);
-      setRouter(response.data);
+      const r = response.data;
+      const mappedRouter: Router = {
+        id: r.id,
+        name: r.name,
+        uri: r.uri,
+        username: r.username,
+        branchId: r.branch_id,
+        branch: r.branch,
+        isActive: r.is_active,
+        status: r.status,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        password: ''
+      };
+      setRouter(mappedRouter);
     } catch (error) {
       setError(getErrorMessage(error));
     }
@@ -63,7 +77,20 @@ export const RouterDetails: React.FC = () => {
   const fetchInterfaces = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}/interfaces`);
-      setInterfaces(response.data);
+      const mappedInterfaces: RouterInterface[] = response.data.map((i: any) => ({
+        id: i.id,
+        routerId: i.router_id,
+        name: i.name,
+        type: i.type,
+        status: i.status,
+        macAddress: i.mac_address,
+        mtu: i.mtu,
+        rxBytes: i.rx_bytes,
+        txBytes: i.tx_bytes,
+        rxPackets: i.rx_packets,
+        txPackets: i.tx_packets
+      }));
+      setInterfaces(mappedInterfaces);
     } catch (error) {
       setError(getErrorMessage(error));
     }
@@ -72,7 +99,20 @@ export const RouterDetails: React.FC = () => {
   const fetchResources = useCallback(async () => {
     try {
       const response = await axios.get(`/api/routers/${id}/resources`);
-      setResources(response.data);
+      const r = response.data;
+      const mappedResources: RouterResource = {
+        routerId: r.router_id,
+        cpuLoad: r.cpu_load,
+        memoryUsed: r.memory_used,
+        memoryTotal: r.memory_total,
+        diskUsed: r.disk_used,
+        diskTotal: r.disk_total,
+        uptime: r.uptime,
+        temperature: r.temperature,
+        voltage: r.voltage,
+        timestamp: r.timestamp
+      };
+      setResources(mappedResources);
     } catch (error) {
       setError(getErrorMessage(error));
     } finally {
