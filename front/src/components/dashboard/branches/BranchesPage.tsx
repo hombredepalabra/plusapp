@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
@@ -22,9 +23,8 @@ import { branchService } from '../../../services/branchService';
 import type { BranchData } from '../../../types/branch';
 
 const getErrorMessage = (error: unknown): string => {
-  if (error && typeof error === 'object' && 'response' in error) {
-    const err = error as any;
-    return err.response?.data?.error || err.message || 'Error de conexión';
+  if (axios.isAxiosError(error)) {
+    return error.response?.data?.error || error.message || 'Error de conexión';
   }
   if (error instanceof Error) {
     return error.message;
@@ -63,8 +63,10 @@ export const BranchesPage: React.FC = () => {
 
   const handleDelete = async (branchId: number) => {
     const branch = branches.find(b => b.id === branchId);
-    if (branch && branch.routers_count > 0) {
-      setError(`No se puede eliminar la sucursal "${branch.name}" porque tiene ${branch.routers_count} routers asignados. Primero reasigna los routers a otra sucursal.`);
+    if (branch && (branch.routers_count ?? 0) > 0) {
+      setError(`No se puede eliminar la sucursal "${branch.name}" 
+        porque tiene ${branch.routers_count ?? 0} routers asignados. 
+        Primero reasigna los routers a otra sucursal.`);
       return;
     }
 
