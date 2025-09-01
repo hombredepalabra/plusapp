@@ -15,7 +15,12 @@ class PPPoEController:
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 50, type=int)
         force_sync = request.args.get('sync', 'false').lower() == 'true'
-        
+        # Filtros opcionales
+        search = request.args.get('search', '', type=str)
+        router_id = request.args.get('router_id', type=int)
+        status = request.args.get('status')
+        profile = request.args.get('profile')
+        is_active_param = request.args.get('is_active')
         # Si no hay datos en DB o se fuerza sync, intentar sincronizar
         secrets_count = Secret.query.filter_by(is_active=True).count()
         
@@ -27,9 +32,44 @@ class PPPoEController:
                 for router in routers[:1]:  # Solo el primer router
                     SyncService.sync_router(router.id, 'auto')
         
+        # Construir consulta base
+        query = Secret.query
+
+        # Filtrar por estado activo/inactivo
+        if is_active_param is not None:
+            query = query.filter(Secret.is_active == (is_active_param.lower() == 'true'))
+        else:
+            query = query.filter(Secret.is_active == True)
+
+        # Filtrar por búsqueda
+        if search:
+            query = query.filter(
+                or_(
+                    Secret.name.ilike(f'%{search}%'),
+                    Secret.comment.ilike(f'%{search}%'),
+                    Secret.ip_address.ilike(f'%{search}%'),
+                    Secret.contract.ilike(f'%{search}%')
+                )
+            )
+
+        # Filtrar por router
+        if router_id:
+            query = query.filter(Secret.router_id == router_id)
+
+        # Filtrar por perfil
+        if profile:
+            query = query.filter(Secret.profile == profile)
+
+        # Filtrar por status (mapear a is_active)
+        if status:
+            if status == 'active':
+                query = query.filter(Secret.is_active == True)
+            elif status in ['suspended', 'blocked', 'disconnected']:
+                query = query.filter(Secret.is_active == False)
+
         # Consultar datos actualizados
         clients = db.paginate(
-            Secret.query.filter_by(is_active=True),
+            query,
             page=page,
             per_page=per_page,
             error_out=False
