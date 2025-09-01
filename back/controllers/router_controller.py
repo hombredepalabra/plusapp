@@ -1,5 +1,6 @@
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import or_
 from models import db
 from models.router import Router, Branch
 from models.user import User
@@ -10,16 +11,40 @@ class RouterController:
     @staticmethod
     @jwt_required()
     def get_routers():
-        """GET /api/routers - Listar todos los routers"""
-        routers = Router.query.filter_by(is_active=True).all()
+        """GET /api/routers - Listar routers con filtros de búsqueda"""
+        search = request.args.get('search')
+        branch_id = request.args.get('branch_id', type=int)
+        is_active = request.args.get('is_active')
+
+        query = Router.query
+        if is_active is not None:
+            query = query.filter(Router.is_active == (is_active.lower() == 'true'))
+        else:
+            query = query.filter(Router.is_active == True)
+
+        if branch_id is not None:
+            query = query.filter(Router.branch_id == branch_id)
+
+        if search:
+            like = f"%{search}%"
+            query = query.filter(
+                or_(
+                    Router.name.ilike(like),
+                    Router.uri.ilike(like),
+                    Router.username.ilike(like)
+                )
+            )
+        routers = query.all()
         return jsonify([{
             'id': r.id,
             'name': r.name,
             'uri': r.uri,
             'username': r.username,
             'branch_id': r.branch_id,
-            'is_active': r.is_active,
-            'created_at': r.created_at.isoformat() if r.created_at else None
+            'branch': {'id': r.branch.id, 'name': r.branch.name} if r.branch else None,
+            'status': getattr(r, 'status', None),
+            'created_at': r.created_at.isoformat() if r.created_at else None,
+            'updated_at': r.updated_at.isoformat() if r.updated_at else None
         } for r in routers]), 200
     
     @staticmethod
