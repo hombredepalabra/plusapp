@@ -121,8 +121,65 @@ export const SessionManagement: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const formatUptime = (uptime: string) => {
-    return uptime;
+  const formatUptime = (
+    uptime: string
+  ): { label: string; tooltip: string } => {
+    const match = uptime.match(/(?:(\d+)w)?(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/);
+    if (!match) {
+      return { label: uptime, tooltip: uptime };
+    }
+
+    const weeks = parseInt(match[1] || '0', 10);
+    const days = parseInt(match[2] || '0', 10);
+    const hours = parseInt(match[3] || '0', 10);
+    const minutes = parseInt(match[4] || '0', 10);
+    const seconds = parseInt(match[5] || '0', 10);
+    const totalSeconds =
+      (((weeks * 7 + days) * 24 + hours) * 60 + minutes) * 60 + seconds;
+
+    const now = new Date();
+    const start = new Date(now.getTime() - totalSeconds * 1000);
+
+    // Main label
+    let label: string;
+    if (weeks > 0) {
+      label = `Conectado hace ${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`;
+    } else if (days > 0) {
+      label = `Conectado hace ${days} ${days === 1 ? 'día' : 'días'}`;
+    } else if (hours > 0) {
+      label = `Conectado hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+    } else if (minutes > 0) {
+      label = `Hace ${minutes} min`;
+    } else {
+      label = `Hace ${seconds} s`;
+    }
+
+    // Detailed duration string
+    const parts: string[] = [];
+    if (weeks) parts.push(`${weeks} ${weeks === 1 ? 'semana' : 'semanas'}`);
+    if (days) parts.push(`${days} ${days === 1 ? 'día' : 'días'}`);
+    if (hours) parts.push(`${hours} ${hours === 1 ? 'hora' : 'horas'}`);
+    if (minutes) parts.push(`${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`);
+    if (seconds) parts.push(`${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`);
+    let detail = parts.join(', ');
+    if (parts.length > 1) {
+      const last = parts.pop();
+      detail = `${parts.join(', ')} y ${last}`;
+    }
+
+    const startDate = start.toLocaleDateString('es-ES', {
+      month: 'long',
+      day: 'numeric',
+    });
+    const startTime = start.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const tooltip = `Conectado desde ${startDate} a las ${startTime}` +
+      (detail ? ` (${detail})` : '');
+
+    return { label, tooltip };
   };
 
   // Filter sessions based on search and router selection
@@ -291,7 +348,9 @@ export const SessionManagement: React.FC = () => {
             </div>
           ) : filteredSessions.length > 0 ? (
             <div className="space-y-4">
-              {paginatedSessions.map((session) => (
+              {paginatedSessions.map((session) => {
+                const uptime = formatUptime(session.uptime);
+                return (
                 <div key={session.id} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-3">
@@ -313,9 +372,9 @@ export const SessionManagement: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant="default">
+                      <Badge variant="default" title={uptime.tooltip}>
                         <Activity className="mr-1 h-3 w-3" />
-                        {formatUptime(session.uptime)}
+                        {uptime.label}
                       </Badge>
                       {canControlClients() && (
                         <Button
@@ -364,7 +423,8 @@ export const SessionManagement: React.FC = () => {
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">

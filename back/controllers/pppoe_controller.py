@@ -553,20 +553,45 @@ class PPPoEController:
             data, error = MikroTikService.get_pppoe_active(router)
             if error or not data:
                 continue
+            
+            interfaces, _ = MikroTikService.get_interfaces(router)
+
             for s in data:
+                username = s.get('name', '')
+                iface = None
+
+                if interfaces:
+                    prefix = f"pppoe-{username}"
+                    for i in interfaces:
+                        name = (i.get('name') or '').strip('<>')
+                        if name.startswith(prefix):
+                            iface = i
+                            break
+
+                if iface:
+                    rx_bytes = int(iface.get('rx-byte') or iface.get('rx_bytes') or 0)
+                    tx_bytes = int(iface.get('tx-byte') or iface.get('tx_bytes') or 0)
+                    rx_packets = int(iface.get('rx-packet') or iface.get('rx_packets') or 0)
+                    tx_packets = int(iface.get('tx-packet') or iface.get('tx_packets') or 0)
+                    interface_found = True
+                else:
+                    rx_bytes = tx_bytes = rx_packets = tx_packets = 0
+                    interface_found = False
+
                 sessions.append({
                     'id': s.get('.id') or s.get('id'),
-                    'clientName': s.get('name', ''),
+                    'clientName': username,
                     'clientId': None,
                     'address': s.get('address', ''),
                     'uptime': s.get('uptime', ''),
-                    'rxBytes': int(s.get('bytes-in', 0)),
-                    'txBytes': int(s.get('bytes-out', 0)),
-                    'rxPackets': int(s.get('packets-in', 0)),
-                    'txPackets': int(s.get('packets-out', 0)),
+                    'rxBytes': rx_bytes,
+                    'txBytes': tx_bytes,
+                    'rxPackets': rx_packets,
+                    'txPackets': tx_packets,
                     'routerId': str(router.id),
                     'routerName': router.name,
                     'callingStationId': s.get('caller-id'),
-                    'calledStationId': s.get('called-id')
+                    'calledStationId': s.get('called-id'),
+                    'interfaceFound': interface_found,
                 })
         return jsonify(sessions), 200
