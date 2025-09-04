@@ -10,6 +10,17 @@ import string
 
 class PPPoEController:
     @staticmethod
+    def _temp_router(router):
+        return type(
+            "RouterObj",
+            (object,),
+            {
+                "uri": router.uri,
+                "username": router.username,
+                "password": EncryptionService.decrypt_password(router.password),
+            },
+        )
+    @staticmethod
     def get_all_clients():
         """GET /api/pppoe/clients - Listar todos los clientes"""
         page = request.args.get('page', 1, type=int)
@@ -29,8 +40,12 @@ class PPPoEController:
             routers = Router.query.filter_by(is_active=True).all()
             if routers:
                 from services.sync_service import SyncService
-                for router in routers[:1]:  # Solo el primer router
-                    SyncService.sync_router(router.id, 'auto')
+                if router_id:
+                    if any(r.id == router_id for r in routers):
+                        SyncService.sync_router(router_id, 'auto')
+                else:
+                    for r in routers:
+                        SyncService.sync_router(r.id, 'auto')
         
         # Construir consulta base
         query = Secret.query
@@ -109,7 +124,7 @@ class PPPoEController:
             router = Router.query.get(data['router_id'])
             if not router or not router.is_active:
                 return jsonify({'error': 'Router no encontrado o inactivo'}), 404
-            
+
             # 1. Crear cliente en MikroTik primero
             mikrotik_data = {
                 'name': data['name'],
@@ -123,7 +138,8 @@ class PPPoEController:
             if data.get('local_address'):
                 mikrotik_data['local-address'] = data['local_address']
             
-            result, error = MikroTikService.create_pppoe_secret(router, mikrotik_data)
+            temp_router = PPPoEController._temp_router(router)
+            result, error = MikroTikService.create_pppoe_secret(temp_router, mikrotik_data)
             if error:
                 return jsonify({
                     'error': f'Error al crear cliente en MikroTik: {error}'
@@ -241,7 +257,8 @@ class PPPoEController:
                 return jsonify({'error': 'Router no encontrado'}), 404
             
             # Buscar el cliente en MikroTik
-            mikrotik_data, error = MikroTikService.get_pppoe_secrets(router)
+            temp_router = PPPoEController._temp_router(router)
+            mikrotik_data, error = MikroTikService.get_pppoe_secrets(temp_router)
             if error:
                 return jsonify({'error': f'Error al consultar MikroTik: {error}'}), 500
             
@@ -297,9 +314,10 @@ class PPPoEController:
             router = Router.query.get(client.router_id)
             if not router or not router.is_active:
                 return jsonify({'error': 'Router no encontrado o inactivo'}), 404
-            
+
             # 2. Buscar el cliente en MikroTik para obtener su ID interno
-            mikrotik_secrets, error = MikroTikService.get_pppoe_secrets(router)
+            temp_router = PPPoEController._temp_router(router)
+            mikrotik_secrets, error = MikroTikService.get_pppoe_secrets(temp_router)
             if error:
                 return jsonify({
                     'error': f'Error al consultar MikroTik: {error}'
@@ -336,7 +354,7 @@ class PPPoEController:
             
             # 4. Actualizar en MikroTik primero
             if mikrotik_update_data:
-                result, error = MikroTikService.update_pppoe_secret(router, mikrotik_secret_id, mikrotik_update_data)
+                result, error = MikroTikService.update_pppoe_secret(temp_router, mikrotik_secret_id, mikrotik_update_data)
                 if error:
                     return jsonify({
                         'error': f'Error al actualizar cliente en MikroTik: {error}'
@@ -405,9 +423,10 @@ class PPPoEController:
             router = Router.query.get(client.router_id)
             if not router or not router.is_active:
                 return jsonify({'error': 'Router no encontrado o inactivo'}), 404
-            
+
             # 2. Buscar el cliente en MikroTik para obtener su ID interno
-            mikrotik_secrets, error = MikroTikService.get_pppoe_secrets(router)
+            temp_router = PPPoEController._temp_router(router)
+            mikrotik_secrets, error = MikroTikService.get_pppoe_secrets(temp_router)
             if error:
                 return jsonify({
                     'error': f'Error al consultar MikroTik: {error}',
@@ -425,7 +444,7 @@ class PPPoEController:
             # 3. Eliminar de MikroTik primero (si existe)
             mikrotik_deleted = False
             if mikrotik_secret_id:
-                result, error = MikroTikService.delete_pppoe_secret(router, mikrotik_secret_id)
+                result, error = MikroTikService.delete_pppoe_secret(temp_router, mikrotik_secret_id)
                 if error:
                     return jsonify({
                         'error': f'Error al eliminar cliente de MikroTik: {error}',
@@ -550,11 +569,12 @@ class PPPoEController:
         routers = Router.query.filter_by(is_active=True).all()
         sessions = []
         for router in routers:
-            data, error = MikroTikService.get_pppoe_active(router)
+            temp_router = PPPoEController._temp_router(router)
+            data, error = MikroTikService.get_pppoe_active(temp_router)
             if error or not data:
                 continue
-            
-            interfaces, _ = MikroTikService.get_interfaces(router)
+
+            interfaces, _ = MikroTikService.get_interfaces(temp_router)
 
             for s in data:
                 username = s.get('name', '')

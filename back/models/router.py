@@ -24,7 +24,8 @@ class Router(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     uri = db.Column(db.String(255), nullable=False)
     username = db.Column(db.String(100), nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    # Se amplía a 255 para evitar truncamientos de tokens Fernet
+    password = db.Column(db.String(255), nullable=False)
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=False)
     is_active = db.Column(db.Boolean, default=True)
     

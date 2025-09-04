@@ -1,7 +1,9 @@
 from datetime import datetime
+from flask import current_app
 from models import db
 from models.router import Router, Secret, RouterFirewall
 from models.sync_log import SyncLog
+from services.encryption_service import EncryptionService
 from services.mikrotik_service import MikroTikService
 
 class SyncService:
@@ -11,6 +13,13 @@ class SyncService:
         router = Router.query.get(router_id)
         if not router:
             return False, "Router no encontrado"
+
+        decrypted_password = EncryptionService.decrypt_password(router.password)
+        temp_router = type(
+            "RouterObj",
+            (object,),
+            {"uri": router.uri, "username": router.username, "password": decrypted_password},
+        )
         
         # Crear log de sincronización
         sync_log = SyncLog(
@@ -25,8 +34,11 @@ class SyncService:
         
         try:
             # Probar conexión
-            connected, message = MikroTikService.test_connection(router)
+            connected, message = MikroTikService.test_connection(temp_router)
             if not connected:
+                current_app.logger.error(
+                    f"Error autenticando router {router_id}: {message}"
+                )
                 sync_log.status = 'error'
                 sync_log.message = f"Error de conexión: {message}"
                 sync_log.completed_at = datetime.utcnow()
@@ -34,8 +46,11 @@ class SyncService:
                 return False, f"Error de conexión: {message}"
 
             # Obtener secrets del router
-            secrets, error = MikroTikService.get_pppoe_secrets(router)
+            secrets, error = MikroTikService.get_pppoe_secrets(temp_router)
             if error:
+                current_app.logger.error(
+                    f"Error obteniendo secrets del router {router_id}: {error}"
+                )
                 sync_log.status = 'error'
                 sync_log.message = f"Error obteniendo secrets: {error}"
                 sync_log.completed_at = datetime.utcnow()
@@ -104,7 +119,16 @@ class SyncService:
             return {'success': False, 'message': 'Router no encontrado'}
 
         # Obtener reglas desde MikroTik
-        rules, error = MikroTikService.get_firewall_rules(router)
+        temp_router = type(
+            "RouterObj",
+            (object,),
+            {
+                "uri": router.uri,
+                "username": router.username,
+                "password": EncryptionService.decrypt_password(router.password),
+            },
+        )
+        rules, error = MikroTikService.get_firewall_rules(temp_router)
         if error:
             return {'success': False, 'message': error}
 
