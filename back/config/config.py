@@ -24,6 +24,8 @@ class Config:
     # ========================================
     SECRET_KEY = os.environ.get('SECRET_KEY')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
+    # Clave utilizada para cifrar contraseñas almacenadas
+    ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY')
     
     # ========================================
     # CONFIGURACIÓN DE BASE DE DATOS
@@ -84,7 +86,8 @@ class Config:
         required_vars = [
             'SECRET_KEY',
             'JWT_SECRET_KEY',
-            'DATABASE_URL'
+            'DATABASE_URL',
+            'ENCRYPTION_KEY'
         ]
         
         missing_vars = []

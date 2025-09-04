@@ -154,11 +154,15 @@ class RouterController:
         })
         
         success, message = MikroTikService.test_connection(test_router)
-        
+
+        status = 200
+        if not success:
+            status = 401 if 'unauthorized' in message.lower() else 500
+
         return jsonify({
             'success': success,
             'message': message
-        }), 200
+        }), status
     
     @staticmethod
     @jwt_required()
