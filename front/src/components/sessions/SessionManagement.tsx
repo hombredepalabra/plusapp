@@ -27,7 +27,8 @@ interface ActiveSession {
   id: string;
   clientName: string;
   clientId?: string;
-  address: string;
+  address?: string;
+  'remote-address'?: string;
   uptime: string;
   rxBytes: number;
   txBytes: number;
@@ -184,12 +185,14 @@ export const SessionManagement: React.FC = () => {
 
   // Filter sessions based on search and router selection
   const filteredSessions = sessions.filter(session => {
-    const matchesSearch = session.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         session.address.includes(searchTerm) ||
-                         session.routerName.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const ip = session.address || session['remote-address'] || '';
+    const matchesSearch =
+      session.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ip.includes(searchTerm) ||
+      session.routerName.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesRouter = !selectedRouter || session.routerId === selectedRouter;
-    
+
     return matchesSearch && matchesRouter;
   });
 
@@ -367,7 +370,7 @@ export const SessionManagement: React.FC = () => {
                           )}
                         </div>
                         <p className="text-sm text-slate-600">
-                          {session.address} • {session.routerName}
+                          {session.address || session['remote-address']} • {session.routerName}
                         </p>
                       </div>
                     </div>
