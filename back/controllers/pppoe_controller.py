@@ -89,12 +89,28 @@ class PPPoEController:
             per_page=per_page,
             error_out=False
         )
-        
+
+        # Mapear IPs activas desde los routers para clientes conectados
+        router_ids = {c.router_id for c in clients.items}
+        active_ips = {}
+        if router_ids:
+            routers = Router.query.filter(Router.id.in_(router_ids)).all()
+            for router in routers:
+                temp_router = PPPoEController._temp_router(router)
+                sessions, _ = MikroTikService.get_pppoe_active(temp_router)
+                if not sessions:
+                    continue
+                for s in sessions:
+                    name = s.get('name')
+                    address = s.get('address') or s.get('remote-address')
+                    if name and address:
+                        active_ips[name] = address
+
         return jsonify({
             'clients': [{
                 'id': c.id,
                 'name': c.name,
-                'ip': c.ip_address,
+                'ip': c.ip_address or active_ips.get(c.name, ''),
                 'profile': c.profile,
                 'comment': c.comment,
                 'contract': c.contract,
