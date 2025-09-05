@@ -29,7 +29,8 @@ export interface PPPoEClient {
   id: string;
   routerId: number;
   router?: Router;
-  ipAddress: string;
+  ip?: string;
+  ipAddress?: string;
   name: string;
   password: string;
   comment?: string;
@@ -46,7 +47,8 @@ export interface PPPoESession {
   id: string;
   clientId: string;
   client?: PPPoEClient;
-  ipAddress: string;
+  ip?: string;
+  ipAddress?: string;
   uptime: string;
   bytesIn: number;
   bytesOut: number;
@@ -126,7 +128,7 @@ export interface ActivityLog {
   routerId: number;
   router?: Router;
   userId: number;
-  user?: any;
+  user?: unknown;
   action: string;
   description?: string;
   ipAddress?: string;
@@ -248,5 +250,6 @@ export interface PPPoEClientFilters {
 export interface SessionFilters {
   routerId?: number;
   clientId?: string;
+  ip?: string;
   ipAddress?: string;
 }
