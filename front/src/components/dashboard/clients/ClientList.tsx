@@ -373,7 +373,7 @@ export const ClientList: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">IP:</span>
-                  <span className="text-sm font-mono text-slate-900">{client.ipAddress || 'Sin IP asignada'}</span>
+                  <span className="text-sm font-mono text-slate-900">{client.ip || client.ipAddress || 'Sin IP asignada'}</span>
                 </div>
                 {client.profile && (
                   <div className="flex items-center justify-between">

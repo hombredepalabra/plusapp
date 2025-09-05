@@ -30,6 +30,7 @@ interface PPPoEClient {
   comment?: string;
   profile?: string;
   contract?: string;
+  ip?: string;
   ipAddress?: string;
   isActive: boolean;
   router?: {
@@ -353,10 +354,10 @@ export const ClientDetails: React.FC = () => {
                   <span className="text-sm font-medium">Estado:</span>
                   {getStatusBadge(client.isActive)}
                 </div>
-                {client.ipAddress && (
+                {(client.ip || client.ipAddress) && (
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">IP:</span>
-                    <span className="text-sm font-mono">{client.ipAddress}</span>
+                    <span className="text-sm font-mono">{client.ip || client.ipAddress}</span>
                   </div>
                 )}
                 {client.profile && (
