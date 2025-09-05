@@ -244,3 +244,6 @@ INSERT INTO branches (name, location) VALUES ('Ibarra', 'Azaya');
 
 INSERT INTO routers (name, uri, username, password, branch_id, is_active, created_at, updated_at) 
 VALUES ('Router Principal', '45.70.15.234', 'ariels875', 'Hell&Back875', 1, true, NOW(), NOW());
+
+INSERT INTO routers (name, uri, username, password, branch_id, is_active, created_at, updated_at) 
+VALUES ('Router Hyper V', '45.70.13.130', 'Us4R_3L', '1qm1GZg2n%D', 1, true, NOW(), NOW());
